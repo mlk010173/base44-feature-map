@@ -7,6 +7,10 @@ const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
 const uid = (p = 'id') => p + '_' + Math.random().toString(36).slice(2, 9);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const initials = (name) => {
+  const w = String(name || '').split(/[\s\-]+/).filter(Boolean);
+  return ((w[0] || '?')[0] + (w[1] ? w[1][0] : '')).toUpperCase();
+};
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const brl = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short' });
 const brlFull = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
@@ -637,7 +641,7 @@ views.integrations = function () {
   const card = (c) => `
     <div class="connector">
       <div class="connector-top">
-        <span class="mark">${esc(c.name.slice(0, 2).toUpperCase())}</span>
+        <span class="mark">${esc(initials(c.name))}</span>
         <b>${esc(c.name)}</b>
         ${c.status === 'active' ? '<span class="badge ok">ativo</span>' : ''}
       </div>
@@ -652,7 +656,7 @@ views.integrations = function () {
 
   const skills = state.skills.map((s) => `
     <div class="row">
-      <div class="mark">${esc(s.name.slice(0, 2).toUpperCase())}</div>
+      <div class="mark">${esc(initials(s.name))}</div>
       <div class="stack"><b>${esc(s.name)}</b><span>${esc(s.desc)}</span></div>
       <div class="side"><button class="toggle ${s.on ? 'on' : ''}" data-act="toggleSkill" data-id="${s.id}" aria-label="Ativar ${esc(s.name)}"><i></i></button></div>
     </div>`).join('');
@@ -665,8 +669,11 @@ views.integrations = function () {
       </div>
       <div class="promo-art" aria-hidden="true">
         <span class="hub"><svg viewBox="0 0 24 24"><path d="M12 3v3m0 12v3M4.2 7.5l2.6 1.5m10.4 6 2.6 1.5M19.8 7.5l-2.6 1.5m-10.4 6-2.6 1.5"/><circle cx="12" cy="12" r="3.4"/></svg></span>
-        <span class="node">Gmail</span>
-        <span class="node">Agenda</span>
+        <span class="nodes">
+          <span class="node">Gmail</span>
+          <span class="node">Slack</span>
+          <span class="node">Agenda</span>
+        </span>
       </div>
     </div>
     ${popular.length ? `<div class="section-title"><h3>Mais populares</h3><button class="link" data-act="showAllConnectors">Ver todos</button></div>
@@ -958,11 +965,26 @@ views.settings = function () {
       </div>
       <div class="card">
         <h3>Webhook de saída</h3>
-        <p class="sub">Recebe eventos de mensagem criada e concluída.</p>
+        <p class="sub">Eventos <span class="mono">message.created</span> e <span class="mono">message.completed</span>. Até 5 por agente, URL HTTPS pública, sem retentativa.</p>
         <div class="inline" style="margin-top:12px">
           <input type="text" readonly value="https://seu-servidor.exemplo/webhook/superagente" class="mono">
           <button class="btn tiny" data-act="copy" data-copy="https://seu-servidor.exemplo/webhook/superagente">Copiar</button>
         </div>
+      </div>
+      <div class="card">
+        <h3>Endpoints que a interface consome</h3>
+        <p class="sub">Contratos públicos do Superagente, documentados em <span class="mono">docs/api-e-backend.md</span>.</p>
+        <div class="table-wrap" style="margin-top:12px">
+          <table><thead><tr><th>Método</th><th>Caminho</th></tr></thead><tbody>
+            <tr><td class="mono">POST</td><td class="mono">/api/agents/{agent_id}/conversations</td></tr>
+            <tr><td class="mono">POST</td><td class="mono">/api/agents/{agent_id}/conversations/{conversation_id}/messages</td></tr>
+            <tr><td class="mono">GET</td><td class="mono">/api/agents/{agent_id}/memory</td></tr>
+            <tr><td class="mono">POST</td><td class="mono">/api/agents/{agent_id}/webhooks</td></tr>
+            <tr><td class="mono">GET</td><td class="mono">/api/apps/{app_id}/entities/{entity_name}</td></tr>
+            <tr><td class="mono">POST</td><td class="mono">/api/apps/{app_id}/entities/{entity_name}</td></tr>
+          </tbody></table>
+        </div>
+        <p class="help" style="margin-top:8px">A demonstração local não faz essas chamadas: simula os contratos no navegador.</p>
       </div>`;
   }
 
@@ -1052,7 +1074,7 @@ const actions = {
     openModal({
       title: 'Todos os conectores',
       body: `<div class="list">${avail.map((c) => `<div class="row">
-          <div class="mark">${esc(c.name.slice(0, 2).toUpperCase())}</div>
+          <div class="mark">${esc(initials(c.name))}</div>
           <div class="stack"><b>${esc(c.name)}</b><span>${esc(c.desc)}</span></div>
           <button class="btn tiny" data-act="connect" data-id="${c.id}">Conectar</button>
         </div>`).join('') || '<p class="sub">Todos os conectores já estão ativos.</p>'}</div>`,

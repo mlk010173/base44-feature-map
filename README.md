@@ -10,6 +10,20 @@ Não é cópia: o visual, o texto e o código são próprios, escritos a partir 
 rotas e da anatomia da interface documentados aqui. Nenhum asset, CSS ou código do produto
 original foi usado.
 
+## Sistema visual e backend
+
+- `docs/interface-visual.md`: paleta, tipografia, medidas e componentes da interface padrão,
+  com a tradução aplicada aqui (azul conduz navegação e ação, laranja é reservado a créditos)
+- `docs/api-e-backend.md`: superfície de API documentada (entidades, conversas, mensagens,
+  memória, webhooks, créditos) e o que a demonstração local simula
+
+## Fidelidade visual
+
+O layout segue a interface padrão: sidebar de 250 px com rodapé fixo, barra superior de 52 px,
+chat centralizado em 760 px, compositor arredondado de 18 px, tabelas com cabeçalho discreto
+e alternador Apps/Agente. Marca, textos, ícones e código são próprios: nada de asset ou
+string copiada do produto original.
+
 ## O que funciona de verdade
 
 - Chat com envio, indicador de pensamento, passos de ferramenta e texto em streaming
