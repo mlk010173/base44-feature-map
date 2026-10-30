@@ -1244,7 +1244,7 @@ function syncMore() {
   g.classList.toggle('open', moreOpen);
   b.setAttribute('aria-expanded', String(moreOpen));
 }
-$('#moreToggle').addEventListener('click', () => { moreOpen = !moreOpen; syncMore(); });
+$('#moreToggle').addEventListener('click', () => { moreOpen = !moreOpen; syncMore(); save(); });
 
 $('#themeToggle').addEventListener('click', () => {
   const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
