@@ -1,74 +1,115 @@
 # Rotas e áreas do produto
 
-Legenda de confiança:
-
-- **verificada** — a página foi aberta e observada diretamente
-- **documentada** — aparece na documentação oficial, mas a URL exata não foi confirmada
-- **pendente** — depende de sessão autenticada (login bloqueado nesta rodada)
+Mapa levantado com sessão autenticada em `app.base44.com` (workspace "Pedro's Workspace").
+Legenda: **verificada** = aberta e observada · **documentada** = citada na doc oficial ·
+**observada** = item visível no menu, URL não confirmada.
 
 ## 1. Domínios
 
-| Domínio | Função | Confiança |
-|---|---|---|
-| `base44.com` | site institucional, preços, templates, blog | documentada |
-| `app.base44.com` | aplicação web (builder, apps, Superagents) | verificada |
-| `docs.base44.com` | documentação (Docusaurus, `/llms.txt` disponível) | verificada |
-
-## 2. Rotas públicas verificadas
-
-| Rota | Descrição | Confiança |
-|---|---|---|
-| `/` | entrada da aplicação; redireciona para login quando não autenticado | verificada |
-| `/login` | autenticação | verificada |
-
-### Tela `/login` (anatomia observada)
-
-- Painel esquerdo: logo, `< Back`, título "Welcome to Base44".
-- Provedores sociais: **Google**, **Apple**, **GitHub**.
-- Separador `OR` + **Continue with email**.
-- Fluxo em duas etapas: e-mail → botão "Continue with email" → campo de senha + "Forgot your password?" → "Log in".
-- **Cloudflare Turnstile** embutido ("Verifying…"), com erro *"Please complete the security verification"* quando o token não está pronto.
-- Erro de credencial: *"Invalid email or password"*.
-- Estado de carregamento: *"Logging in…"*.
-- Rodapé: Terms of Service, Privacy Policy.
-- Painel direito: cartão "72% Account Health" (Healthy / At Risk / Champion), headline "Turn your ideas into apps", colagem visual.
-- Observação: a tentativa automatizada de login por e-mail/senha falhou nas duas senhas testadas;
-  o widget anti-bot e a validação de credencial são os bloqueios.
-
-## 3. Áreas internas (sidebar do Superagent)
-
-Documentadas em <https://docs.base44.com/Getting-Started/ai-agent>. A URL de cada área não foi
-confirmada (exige sessão).
-
-| Área | Função |
+| Domínio | Função |
 |---|---|
-| Chat | conversa principal com o agente, anexos, ditado, voz |
-| Channels | WhatsApp, Telegram, iMessage, Slack, LINE, Phone |
-| Plugins | connectors (Google, Slack, GitHub, Notion, HubSpot…) + skills |
-| Workflows | agendados, por gatilho, atividade recente |
-| Notes | espaço compartilhado, com a nota fixa "For you" |
-| Files | uploads, pastas, arquivos criados pelo agente |
-| Memory | fatos duráveis, contexto de trabalho, log diário |
-| Data | tabelas (entidades), CRUD inline, export CSV, estrutura, restauração |
-| Agent Settings | General (modelos, apps acessíveis, voz, mover, excluir), Trusted people, Sharing & access, Meetings |
-| Marketplace / Skill store | catálogo curado de skills |
+| `base44.com` | site institucional, preços, templates, blog |
+| `app.base44.com` | aplicação web (apps, agentes, conectores) |
+| `docs.base44.com` | documentação (Docusaurus, expõe `/llms.txt`) |
 
-## 4. Superfícies fora da web
+## 2. Autenticação
 
-- **App mobile** iOS e Android.
-- **Extensão de navegador** para o agente operar no Chrome.
-- **API do agente** (conversas, mensagens, memória, envio direto).
-- **Webhooks de saída** (`message.created`, `message.completed`).
+`/login` — verificada
 
-## 5. Estrutura de URL típica (a confirmar)
+- Google, Apple, GitHub ou e-mail + senha.
+- Fluxo em duas etapas: e-mail → "Continue with email" → senha → "Log in".
+- Cloudflare Turnstile embutido ("Verifying…"); sem token aparece
+  *"Please complete the security verification"*.
+- Erros: *"Invalid email or password"*; estado *"Logging in…"*.
+- Login por Google pede 2FA por notificação no celular ("Verify it's you").
+- Redireciona para `/` depois do login.
 
-Padrões prováveis derivados do próprio `app.base44.com/superagent/{agent_id}`:
+## 3. Modo Apps (workspace)
 
-```
-/superagent/{agent_id}          chat do agente
-/apps/{app_id}                  editor de app
-/apps/{app_id}/entities/{name}  dados
-/apps/{app_id}/workflows        automações
-```
+Sidebar: Home · Search · All apps · Base Code · Templates · Community · Basecamp ·
+Launchpad · Connectors · Partners · Messages · Hire a partner.
 
-Marcadas como **pendente**: só entram no mapa como confirmadas depois de uma sessão autenticada.
+| Rota | Tela | Estado |
+|---|---|---|
+| `/` | Home: "Hi {nome}. What will you build next?" + seletor Auto/Build, apps recentes, templates | verificada |
+| `/apps` | Lista de apps, "New folder", "Create app", filtros (owner, status, ordenação) | verificada |
+| `/base-code` | Base Code | observada |
+| `/app-templates` | Templates | verificada |
+| `/connectors` | "Manage connectors", "Add connector", contas conectadas por serviço | verificada |
+| `/community`, `/basecamp`, `/launchpad`, `/partners`, `/messages` | áreas da sidebar | observadas |
+
+### `/connectors` (conteúdo observado)
+
+- Cabeçalho "Manage connectors" + botão "Add connector".
+- Cartões por provedor com número de contas: `GitHub API (2) — 2 accounts connected`, `Gmail — e-mail`, botão "View".
+
+## 4. Modo Agent (Superagent)
+
+Sidebar: New conversation · Workflows · Plugins · Channels · Notes · Agent Settings · More.
+
+| Rota | Tela | Estado |
+|---|---|---|
+| `/superagent/{agent_id}` | Chat do agente | verificada |
+| `/superagent/{id}/tasks` | **Workflows** (agendados, gatilhos, atividade) | verificada |
+| `/superagent/{id}/integrations` | **Plugins**: abas Connectors e Skills | verificada |
+| `/superagent/{id}/settings` | **Agent Settings** (modal com abas) | verificada |
+| `/superagent/{id}/settings?panel=channels` | **Channels** (abre o painel dentro de settings) | verificada |
+| `/superagent/{id}/notes` | Notes | verificada |
+| `/superagent/{id}/library` | **Files** (menu More) | verificada |
+| `/superagent/{id}/memory` | **Memory** (menu More) | verificada |
+| `/superagent/{id}/data` | **Data** (menu More) | verificada |
+
+Observação de arquitetura: **Workflows**, **Notes**, **Files**, **Memory**, **Data** e **Agent Settings**
+são rotas próprias; **Channels** é um painel de `settings`. O menu *More* agrupa
+Files + Memory + Data.
+
+### Agent Settings — abas
+
+`General` · `Trusted people` · `Credit usage` · `Meetings` · `Security` · `Developer`
+
+Conteúdo de **General**:
+
+- **AI models** (tag *Builder*): Chat e Automations, ambos em `Automatic` por padrão.
+- **Cross-app data access**: "All workspace apps" — leitura/atualização/watch; ações interativas
+  rodam com as permissões de quem conversa, watches em background rodam como o dono.
+- **Voice**: seletor (padrão `Kore`) com botão de preview.
+- **Public template link**: botão Share; conectores não vão no clone.
+- **Delete this agent**: move para Recently deleted por 30 dias; integrações são desconectadas
+  na hora e não voltam ao restaurar.
+
+### Plugins — `/integrations`
+
+- Botão "Add Connector"; abas **Connectors** e **Skills**.
+- Cartões sugeridos: Google Calendar, Google Slides, Google Docs, Google Sheets, Google Drive,
+  Instagram Business, Google Maps (New), Outlook.
+- Bloco **Apps connected** (N): mostra status e escopo, ex.: `Gmail — Active · Read only`,
+  `GitHub API — Active`.
+- Bloco **Channels** dentro da mesma página.
+
+### Channels — `/settings?panel=channels`
+
+| Canal | Estados vistos |
+|---|---|
+| WhatsApp | Connected · número mascarado · botão Manage |
+| Telegram | "We'll create a private bot for you in one click" |
+| iMessage | verificação por código enviado do iPhone/Mac |
+| Slack | "@Superagent em um canal e ele responde na thread" |
+| Phone | New — provisiona número após verificar o seu |
+| Browser extension | Install — agente usa seu navegador |
+
+### Estados vazios observados
+
+- **Notes**: "Create your first note" + "Add new note" + "Build from memory".
+- **Files**: "Files uploaded for your agent to use and reference" + "Add New";
+  árvore com `.agents`, `base44`, `conversations`.
+- **Apps**: "Create your first app" + "Create app" + "Browse templates".
+- **Favorites**: "No favorite apps yet. Add your apps for quick access".
+
+### Erro de permissão
+
+Abrir um agente de outro workspace devolve:
+
+> Couldn't load the app — You may not have permission to access it.
+> Refresh · Reach out to support
+
+Ou seja: o roteamento é por `agent_id` e o gate de permissão é por workspace.

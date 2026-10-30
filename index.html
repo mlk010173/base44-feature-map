@@ -187,10 +187,11 @@
 
   <section id="nota">
     <div class="note">
-      <strong>Pendência conhecida:</strong> as rotas internas da aplicação logada não entraram no mapa.
-      A autenticação em <code>app.base44.com/login</code> respondeu <code>Invalid email or password</code>
-      para as credenciais fornecidas, e há um desafio anti-bot (Turnstile) na tela. Com a senha correta
-      ou login pelo Google, essa camada é completada.
+      <strong>Sessão verificada.</strong> O mapa foi levantado com login real em <code>app.base44.com</code>,
+      conferindo cada rota da sidebar. Duas ressalvas: a conta usada está com
+      <strong>0 créditos</strong>, então não foi possível exercitar uma resposta completa do agente
+      em streaming; e itens marcados como <em>observada</em> aparecem no menu mas tiveram a URL
+      inferida. As rotas centralizadas em <code>/superagent/{id}</code> foram todas confirmadas.
     </div>
   </section>
 </main>
@@ -204,62 +205,71 @@
 
 <script>
 const routes = [
-  ["base44.com","Site institucional, preços, templates, blog","produto","doc"],
-  ["app.base44.com","Aplicação web: builder, apps e agentes","produto","ok"],
-  ["docs.base44.com","Documentação (com /llms.txt)","produto","ok"],
-  ["/login","Autenticação — Google, Apple, GitHub ou e-mail+senha","produto","ok"],
-  ["Chat","Conversa com o agente: anexos, ditado, voz, streaming","agente","doc"],
-  ["Channels","WhatsApp, Telegram, iMessage, Slack, LINE, Phone","integracoes","doc"],
-  ["Plugins","Connectors e skills instaláveis","integracoes","doc"],
-  ["Workflows","Agendados, por gatilho e histórico de execuções","agente","doc"],
-  ["Notes","Espaço compartilhado, com a nota fixa For you","agente","doc"],
-  ["Files","Uploads, pastas e arquivos criados pelo agente","dados","doc"],
-  ["Memory","Fatos duráveis, contexto de trabalho e log diário","agente","doc"],
-  ["Data","Tabelas, CRUD inline, export CSV, restauração","dados","doc"],
-  ["Agent Settings","Modelos, apps acessíveis, voz, people, sharing","produto","doc"],
-  ["Skill store","Catálogo curado de skills por categoria","integracoes","doc"],
-  ["API do agente","Conversas, mensagens, memória, envio direto","integracoes","doc"],
-  ["Webhooks de saída","message.created e message.completed","integracoes","doc"],
-  ["App mobile","iOS e Android","produto","doc"],
-  ["Extensão de navegador","Agente operando no Chrome","produto","doc"],
-  ["/superagent/{id}","Área do agente (padrão de URL a confirmar)","agente","pend"],
-  ["/apps/{id}","Editor de app (a confirmar)","produto","pend"],
-  ["/apps/{id}/entities/{name}","Dados do app (a confirmar)","dados","pend"]
+  ["app.base44.com","Aplicação web: apps, agentes e conectores","produto","ok"],
+  ["/login","Google, Apple, GitHub ou e-mail + senha (Turnstile)","produto","ok"],
+  ["/","Home: \"Hi {nome}. What will you build next?\" + Auto/Build","produto","ok"],
+  ["/apps","Lista de apps, New folder, Create app, filtros","produto","ok"],
+  ["/app-templates","Templates de app","produto","ok"],
+  ["/connectors","Manage connectors, Add connector, contas conectadas","integracoes","ok"],
+  ["/base-code","Base Code","produto","obs"],
+  ["/community","Community","produto","obs"],
+  ["/basecamp","Basecamp","produto","obs"],
+  ["/launchpad","Launchpad","produto","obs"],
+  ["/partners","Partners","produto","obs"],
+  ["/messages","Messages","produto","obs"],
+  ["/superagent/{id}","Chat do agente: mensagens, Thinking..., compositor","agente","ok"],
+  ["/superagent/{id}/tasks","Workflows: agendados, gatilhos, atividade","agente","ok"],
+  ["/superagent/{id}/integrations","Plugins: abas Connectors e Skills","integracoes","ok"],
+  ["/superagent/{id}/settings","Agent Settings: General, Trusted people, Credit usage","produto","ok"],
+  ["/superagent/{id}/settings?panel=channels","Channels: WhatsApp, Telegram, iMessage, Slack, Phone","integracoes","ok"],
+  ["/superagent/{id}/notes","Notes","agente","ok"],
+  ["/superagent/{id}/library","Files (menu More)","dados","ok"],
+  ["/superagent/{id}/memory","Memory (menu More)","agente","ok"],
+  ["/superagent/{id}/data","Data (menu More)","dados","ok"],
+  ["base44.com","Site institucional, preços, templates, blog","produto","ok"],
+  ["docs.base44.com","Documentação, com /llms.txt","produto","ok"]
 ];
 
 const cards = [
-  ["agente","Chat",  "Compositor com anexos, arrastar e soltar, ditado, voz e sugestões de prompt."],
-  ["agente","Voz",   "Conversa em tempo real com compartilhamento de tela e câmera."],
+  ["agente","Chat",  "Rótulo de autor, horário, blocos ricos e indicador Thinking..."],
+  ["agente","Compositor","Anexo (+), seletor de modelo Auto, ditado por microfone, modo voz."],
+  ["agente","Workflows","Rota própria /tasks: agendados, gatilhos e histórico de execução."],
+  ["agente","Notes","Estado vazio com Add new note e Build from memory."],
+  ["agente","Memory","Fatos duráveis, contexto de trabalho e log diário de conversas."],
+  ["agente","Data","Tabelas do agente: registros, estrutura, export e restauração."],
   ["agente","Sub-agents","Workers em background, até 12 em paralelo por conversa."],
-  ["agente","Memória","Fatos, preferências e decisões duráveis, com origem rastreável."],
-  ["agente","Objetivos","Planos duráveis multi-turno com critério de aceitação explícito."],
-  ["agente","Workflows","Cron, intervalo, instante único, evento de entidade, connector e webhook."],
-  ["agente","Notes","Notas por tópico, compartilhadas entre você e o agente."],
+  ["agente","Voz","Conversa em tempo real com compartilhamento de tela e câmera."],
   ["agente","Meetings","Entra na reunião como notetaker e salva notas e action items."],
-  ["agente","Navegador","Navegação autônoma com leitura de página, extração e ações."],
 
-  ["integracoes","Connectors","OAuth para Google, Slack, GitHub, Notion, HubSpot, Outlook, Stripe."],
-  ["integracoes","Skills","Instruções reutilizáveis; catálogo curado e skills próprias."],
-  ["integracoes","Canais","WhatsApp, Telegram, iMessage, Slack, LINE e Phone."],
-  ["integracoes","WhatsApp grupos","Grupo operado pelo agente, invite link, até 8 números."],
-  ["integracoes","Phone","Número dedicado, até 20 ligações por dia e 5 por hora."],
-  ["integracoes","Webhooks","POST de entrada para provedores sem connector trigger."],
-  ["integracoes","API do agente","Endpoints de conversas, mensagens, memória e envio direto."],
+  ["integracoes","Plugins","Uma página, duas abas: Connectors e Skills, com Add Connector."],
+  ["integracoes","Connectors","Cartões por serviço, status Active e escopo (ex.: Read only)."],
+  ["integracoes","Channels","Painel dentro de settings, não rota própria."],
+  ["integracoes","WhatsApp","Connected com número mascarado e botão Manage."],
+  ["integracoes","Telegram","Bot privado criado em um clique."],
+  ["integracoes","iMessage","Verificação por código enviado do iPhone ou Mac."],
+  ["integracoes","Slack","Menção @Superagent no canal, resposta na thread."],
+  ["integracoes","Phone","Número dedicado após verificar o número do dono."],
+  ["integracoes","Browser extension","Agente usa o seu navegador para navegar e preencher formulários."],
 
+  ["dados","Files","Rota /library, árvore por pastas (.agents, base44, conversations)."],
   ["dados","Entidades","Schemas JSON com id, created_date, updated_date, created_by."],
   ["dados","RLS","Isolamento por criador para não-admin; admin enxerga tudo."],
   ["dados","Backend functions","HTTP server-side para APIs externas e transformação."],
   ["dados","Arquivos","Upload público, privado com URL assinada, e assets do agente."],
   ["dados","Transcrição","Áudio para texto em ogg, mp3, wav, webm, m4a, flac."],
 
-  ["produto","Modelos","Seleção de modelo para chat e automações."],
-  ["produto","Compartilhamento","Colaboradores, co-owners e template público."],
-  ["produto","Créditos","Uso por plano, com limites mensais e diários."],
-  ["produto","Pagamentos","Cobrança, produtos, preços e checkout."],
-  ["produto","Segurança","Permissões de ferramentas, secrets e auto-aprovação."]
+  ["produto","Modelos","Dois seletores no General: Chat e Automations, ambos Automatic."],
+  ["produto","Cross-app access","All workspace apps; ações interativas usam as permissões de quem conversa."],
+  ["produto","Voz do agente","Seletor com preview (padrão Kore)."],
+  ["produto","Template público","Share gera link de cópia do agente, sem conectores."],
+  ["produto","Exclusão","Recently deleted por 30 dias; integrações desconectam na hora."],
+  ["produto","Onboarding","Cartão 4 of 5 complete com Finish setup na sidebar."],
+  ["produto","Créditos","Banner substitui a experiência normal quando zera; renova por data."],
+  ["produto","Permissões","Agente de outro workspace abre erro de acesso, não 404."],
+  ["produto","Pagamentos","Cobrança, produtos, preços e checkout."]
 ];
 
-const conf = {ok:["ok","verificada"],doc:["doc","documentada"],pend:["pend","pendente"]};
+const conf = {ok:["ok","verificada"],doc:["doc","documentada"],pend:["pend","pendente"],obs:["doc","observada"]};
 
 function renderRoutes(filter, q){
   const body = document.getElementById("routes-body");

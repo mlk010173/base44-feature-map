@@ -1,67 +1,71 @@
-# Chat e streaming — anatomia da interface
+# Chat e streaming — anatomia observada
 
-Resumo do que é público e verificável sobre a experiência de conversa, mais as decisões de
-implementação que qualquer clone *não* deveria copiar (e que este projeto não copia).
+Baseado na interface autenticada em `/superagent/{agent_id}`.
 
-## 1. Estrutura da tela de chat
+## 1. Layout
 
 ```
-┌──────────────┬───────────────────────────────────────────┐
-│ sidebar      │  header (nome do agente, ações, modelo)     │
-│              ├───────────────────────────────────────────┤
-│ • For you    │                                           │
-│ • Chat       │           mensagens (scroll)              │
-│ • Notes      │   usuário ───────────────► direita        │
-│ • Files      │   agente  ◄─────────────── esquerda       │
-│ • Memory     │   • tool call (colapsada, com status)     │
-│ • Data       │   • streaming em andamento (cursor)       │
-│ • Workflows  │                                           │
-│ • Channels   │                                           │
-│ • Plugins    ├───────────────────────────────────────────┤
-│ • Settings   │  compositor: anexo, ditado, voz, enviar    │
-└──────────────┴───────────────────────────────────────────┘
+┌──────────────────────┬────────────────────────────────────────┐
+│ sidebar (apps)       │ header: ícone do agente + nome         │
+│  Apps | Agent  ◄toggle                                          │
+│  + New conversation  │  área de mensagens (scroll)            │
+│  Workflows           │                                        │
+│  Plugins             │   "Superagent said" + horário          │
+│  Channels            │   "anonymous said" + horário           │
+│  Notes               │   "Thinking..." enquanto processa      │
+│  Agent Settings      │                                        │
+│  More ▸              ├────────────────────────────────────────┤
+│ ── Conversations ──  │  banner de créditos (quando zerado)    │
+│  · título + data     │  compositor: +  Auto  🎤  wave   ▷     │
+│ ── Setup card ──     │  placeholder "Type a message..."       │
+│  4 of 5 complete     │                                        │
+│ ── Upgrade card ──   │                                        │
+│ ── user + sino ──    │                                        │
+└──────────────────────┴────────────────────────────────────────┘
 ```
 
-## 2. Estados de mensagem
+## 2. Elementos confirmados
 
-| Estado | Sinal visual |
-|---|---|
-| enviado | bolha otimista antes da confirmação |
-| pensando | indicador de atividade (dots / shimmer) |
-| streaming | texto crescendo token a token |
-| tool running | bloco da ferramenta aberto, com nome e argumentos |
-| tool done | bloco colapsado, com resultado resumido |
-| erro | tarja de erro com opção de retentar |
-| concluído | mensagem finalizada, ações de copiar / regenerar |
+**Sidebar**
+- Toggle pílula `Apps` / `Agent` no topo (troca de contexto do workspace).
+- Lista de conversas com título e data (ex.: `Oct 21, 2026`).
+- Cartão de onboarding "Set up your Superagent — 4 of 5 complete" com barra de progresso e
+  botão "Finish setup".
+- Cartão "Upgrade your plan — Get more out of your apps" com ícone de coroa.
+- Rodapé: avatar com iniciais, nome do workspace, nome do usuário, chevron e sino com badge numérico.
 
-## 3. Streaming — modelo mental
+**Mensagens**
+- Rótulo de autor por mensagem ("Superagent said", "anonymous said") acima e horário abaixo.
+- Blocos de conteúdo ricos dentro da mensagem (ex.: título "Issue verificada" + corpo markdown).
+- Indicador de atividade textual: `Thinking...` acompanhado de um quadrado azul.
 
-- Transporte típico: SSE ou WebSocket com eventos incrementais (`token`, `tool_start`, `tool_end`, `done`).
-- O texto é acumulado no cliente; a bolha cresce sem re-renderizar a lista inteira.
-- Chamadas de ferramenta aparecem **no meio** do stream, então o renderizador precisa suportar
-  intercalação de texto e blocos estruturados.
-- Auto-scroll só quando o usuário está no fim da lista (senão ancorar a posição).
-- Interrupção: o usuário pode parar a geração; o backend deve aceitar cancelamento e persistir o parcial.
+**Créditos**
+- Linha: `0 credits remaining` + `renews in 1d 21h`.
+- Caixa tracejada: "You're out of monthly credits" + CTA "View plans".
 
-## 4. Compositor
+**Compositor**
+- `+` para anexos, seletor de modelo (`Auto`), microfone (ditado),
+  ícone de onda (modo voz), placeholder "Type a message...".
 
-- Enter envia, Shift+Enter quebra linha.
-- Anexos: arrastar e soltar, colar imagem, seletor de arquivo; preview em card antes de enviar.
-- Ditado (speech-to-text) e modo voz (conversa em tempo real com compartilhamento de tela/câmera).
-- Sugestões de prompt no próprio campo, no idioma da conversa.
-- Comandos com barra para ações rápidas.
+## 3. Streaming — comportamento esperado
 
-## 5. Saídas ricas
+- Texto cresce incrementalmente e é intercalado com blocos de ferramenta.
+- `Thinking...` cobre o intervalo entre envio e primeiro token.
+- Auto-scroll só quando o usuário está no fim da lista.
+- Cancelamento deve persistir o parcial.
 
-- Cards de arquivo (Preview / renomear / abrir em Files).
-- Imagens nativas quando o canal suporta.
-- Tabelas e listas renderizadas em markdown.
-- Artefatos visuais embutidos (HTML/SVG em iframe sandbox).
+## 4. Regras de produto que a UI revela
 
-## 6. Princípios para uma interface própria
+1. **Modelo por contexto**: "Chat" e "Automations" têm seletores independentes, ambos em
+   `Automatic` por padrão (escolhe o melhor modelo por tarefa).
+2. **Créditos são o gargalo visível**: o banner substitui a experiência normal de chat quando zera.
+3. **Permissão por workspace**: URL de agente de outro workspace abre erro de permissão, não 404.
+4. **Onboarding numerado**: o cartão "4 of 5" indica checklist com etapas mensuráveis.
 
-1. **Não copiar assets, textos ou CSS do produto original.** Reimplementar do zero com identidade própria.
-2. **Acessibilidade primeiro**: foco visível, navegação por teclado, `aria-live` no stream.
-3. **Streaming resiliente**: reconectar e retomar de onde parou, nunca duplicar tokens.
-4. **Estados explícitos**: carregando, vazio, erro, sem permissão.
-5. **Markdown seguro**: sanitizar HTML vindo do modelo.
+## 5. Diretrizes para uma interface própria
+
+- Nunca copiar assets, textos ou CSS do produto original.
+- Acessibilidade: foco visível, navegação por teclado, `aria-live="polite"` no stream.
+- Reconexão de stream sem duplicar tokens.
+- Sanitizar HTML vindo do modelo.
+- Estados explícitos: vazio, carregando, erro, sem permissão, sem créditos.

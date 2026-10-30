@@ -33,10 +33,13 @@ O `index.html` é um painel estático (sem build, sem dependências) publicado v
 ## Estado
 
 - ✅ Conexão GitHub autorizada (conta `mlk010173`)
-- ✅ Mapa montado a partir da documentação pública oficial
-- ⚠️ Rotas internas da aplicação logada **pendentes**: o login por e-mail/senha em `app.base44.com`
-  retornou `Invalid email or password` para as duas senhas informadas. Pulando essa etapa, o mapa
-  interno pode ser completado em uma próxima rodada.
+- ✅ Login em `app.base44.com` concluído (conta informada), incluindo 2FA por notificação no celular
+- ✅ 13 rotas internas confirmadas, incluindo `/superagent/{id}/tasks`, `/integrations`, `/settings`,
+  `/notes`, `/library`, `/memory` e `/data`
+- ✅ Anatomia do chat, do compositor e da tela de Plugins/Channels documentada
+- ⚠️ A conta usada tem **0 créditos**, então não foi possível exercitar uma resposta de agente
+  em streaming do início ao fim; o comportamento de streaming está descrito a partir da UI e da
+  documentação, não de uma captura de tokens ao vivo
 
 ## Licença
 
