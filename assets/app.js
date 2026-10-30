@@ -536,41 +536,98 @@ function updateSlash(value) {
 }
 
 /* ============ view: workflows ============ */
+let wfTab = 'scheduled';
+let wfFilter = 'active';
+let wfQuery = '';
+
 views.tasks = function () {
-  const rows = state.workflows.map((w) => `
-    <div class="row">
-      <div class="stack">
-        <b>${esc(w.name)}</b>
-        <span>${esc(w.trigger)} · ${esc(w.detail)}</span>
-        <span>${w.runs.length ? 'Última execução ' + brl.format(w.runs[0].ts) + ' · ' + (w.runs[0].ms / 1000).toFixed(1) + 's' : 'Nunca executado'}</span>
-      </div>
-      <div class="side">
-        <span class="badge ${w.active ? 'ok' : 'off'}">${w.active ? 'ativo' : 'pausado'}</span>
-        <button class="toggle ${w.active ? 'on' : ''}" data-act="toggleWorkflow" data-id="${w.id}" aria-label="Ativar ou pausar ${esc(w.name)}"><i></i></button>
-        <button class="btn tiny" data-act="runWorkflow" data-id="${w.id}">Executar</button>
-        <button class="btn tiny ghost" data-act="delWorkflow" data-id="${w.id}" aria-label="Excluir ${esc(w.name)}">Excluir</button>
-      </div>
-    </div>`).join('');
+  const all = state.workflows;
+  const counts = {
+    active: all.filter((w) => w.active).length,
+    paused: all.filter((w) => !w.active).length,
+    done: 0,
+  };
+  const q = wfQuery.toLowerCase();
+  const rows = all
+    .filter((w) => (wfFilter === 'active' ? w.active : wfFilter === 'paused' ? !w.active : false))
+    .filter((w) => !q || (w.name + ' ' + w.trigger + ' ' + w.detail).toLowerCase().includes(q));
+
+  const lastRun = (w) => (w.runs[0] ? brlFull.format(w.runs[0].ts) + ' ' + hora.format(w.runs[0].ts) : 'nunca');
+
+  const table = rows.length ? `
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th style="width:42%">Workflow</th><th>Gatilho</th><th>Última execução</th><th style="width:150px"></th></tr></thead>
+        <tbody>
+          ${rows.map((w) => `<tr>
+            <td>
+              <div style="display:flex;align-items:center;gap:8px">
+                <button class="toggle ${w.active ? 'on' : ''}" data-act="toggleWorkflow" data-id="${w.id}" aria-label="Ativar ou pausar ${esc(w.name)}"><i></i></button>
+                <b style="font-weight:600">${esc(w.name)}</b>
+              </div>
+            </td>
+            <td><span class="badge">${esc(w.trigger)}</span><div class="help" style="margin-top:3px">${esc(w.detail)}</div></td>
+            <td class="mono" style="color:var(--muted)">${esc(lastRun(w))}</td>
+            <td>
+              <div style="display:flex;gap:6px;justify-content:flex-end">
+                <button class="btn tiny" data-act="runWorkflow" data-id="${w.id}">Executar agora</button>
+                <button class="btn tiny ghost" data-act="wfMenu" data-id="${w.id}" aria-label="Mais opções">···</button>
+              </div>
+            </td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>` : `<div class="empty"><strong>Nada por aqui</strong><p>${wfQuery ? 'Nenhum workflow corresponde à busca.' : 'Crie o primeiro workflow para o agente trabalhar sozinho.'}</p></div>`;
+
+  const activity = `
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Workflow</th><th>Quando</th><th>Status</th><th>Duração</th></tr></thead>
+        <tbody>
+        ${all.flatMap((w) => w.runs.map((r) => `<tr>
+          <td>${esc(w.name)}</td>
+          <td class="mono" style="color:var(--muted)">${brlFull.format(r.ts)} ${hora.format(r.ts)}</td>
+          <td><span class="badge ok">${esc(r.status)}</span></td>
+          <td>${(r.ms / 1000).toFixed(1)}s</td>
+        </tr>`)).join('') || '<tr><td colspan="4" style="color:var(--muted)">Nenhuma execução registrada.</td></tr>'}
+        </tbody>
+      </table>
+    </div>`;
 
   $('#view').innerHTML = `<div class="view-inner">
       <div class="section-head">
-        <div><h2>Workflows</h2><p>Agendamentos e gatilhos que executam sozinhos. ${state.workflows.filter((w) => w.active).length} ativos.</p></div>
-        <button class="btn primary" data-act="newWorkflow">Novo workflow</button>
-      </div>
-      <div class="list">${rows || '<div class="empty"><strong>Nenhum workflow</strong><p>Crie o primeiro para o agente trabalhar sozinho.</p></div>'}</div>
-      <div class="card" style="margin-top:16px">
-        <h3>Últimas execuções</h3>
-        <p class="sub">Histórico das execuções registradas.</p>
-        <div class="table-wrap" style="margin-top:10px">
-          <table><thead><tr><th>Workflow</th><th>Quando</th><th>Status</th><th>Duração</th></tr></thead><tbody>
-          ${state.workflows.flatMap((w) => w.runs.map((r) => `<tr><td>${esc(w.name)}</td><td>${brlFull.format(r.ts)} ${hora.format(r.ts)}</td><td><span class="badge ok">${r.status}</span></td><td>${(r.ms / 1000).toFixed(1)}s</td></tr>`)).join('') || '<tr><td colspan="4" style="color:var(--muted)">Nada por aqui ainda.</td></tr>'}
-          </tbody></table>
+        <div>
+          <h2>Workflows</h2>
+          <p>Ações automatizadas por agenda ou quando um gatilho acontece.</p>
         </div>
+        <button class="btn dark" data-act="newWorkflow">Novo workflow</button>
       </div>
+
+      <div class="tabs">
+        <button class="tab ${wfTab === 'scheduled' ? 'on' : ''}" data-act="wfTab" data-tab="scheduled">Workflows agendados</button>
+        <button class="tab ${wfTab === 'triggered' ? 'on' : ''}" data-act="wfTab" data-tab="triggered">Com gatilho</button>
+        <button class="tab ${wfTab === 'activity' ? 'on' : ''}" data-act="wfTab" data-tab="activity">Atividade</button>
+      </div>
+
+      ${wfTab === 'activity' ? activity : `
+        <div class="toolbar">
+          ${[['active', 'Ativos'], ['paused', 'Pausados'], ['done', 'Concluídos']].map(([k, label]) => `
+            <button class="btn tiny ${wfFilter === k ? 'dark' : ''}" data-act="wfFilter" data-filter="${k}">${label} (${counts[k]})</button>
+          `).join('')}
+          <input type="search" id="wfSearch" placeholder="Buscar workflows" value="${esc(wfQuery)}" style="max-width:240px;margin-left:auto">
+        </div>
+        ${table}`}
     </div>`;
+
+  const search = $('#wfSearch');
+  if (search) search.addEventListener('input', (e) => {
+    wfQuery = e.target.value;
+    views.tasks();
+    setTimeout(() => { const i = $('#wfSearch'); if (i) { i.focus(); i.setSelectionRange(i.value.length, i.value.length); } }, 0);
+  });
 };
 
-/* ============ view: plugins ============ */
+/* ============ view: plugins ============ *//* ============ view: plugins ============ */
 let pluginsTab = 'connectors';
 views.integrations = function () {
   const active = state.connectors.filter((c) => c.status === 'active');
@@ -1044,6 +1101,23 @@ const actions = {
   },
 
   /* workflows */
+  wfTab(el) { wfTab = el.dataset.tab; views.tasks(); },
+  wfFilter(el) { wfFilter = el.dataset.filter; views.tasks(); },
+  wfMenu(el) {
+    const w = state.workflows.find((x) => x.id === el.dataset.id);
+    openModal({
+      title: w.name,
+      body: `<dl class="kv">
+          <dt>Gatilho</dt><dd>${esc(w.trigger)}</dd>
+          <dt>Quando</dt><dd>${esc(w.detail)}</dd>
+          <dt>Status</dt><dd>${w.active ? 'ativo' : 'pausado'}</dd>
+          <dt>Execuções</dt><dd>${w.runs.length}</dd>
+        </dl>`,
+      foot: `<button class="btn danger" data-act="delWorkflow" data-id="${w.id}">Excluir</button>
+        <button class="btn" data-act="toggleWorkflow" data-id="${w.id}">${w.active ? 'Pausar' : 'Ativar'}</button>
+        <button class="btn primary" data-close="1">Fechar</button>`,
+    });
+  },
   toggleWorkflow(el) {
     const w = state.workflows.find((x) => x.id === el.dataset.id);
     w.active = !w.active;
