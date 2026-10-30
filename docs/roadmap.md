@@ -2,13 +2,22 @@
 
 Ideias priorizadas para evoluir este mapa e a interface do site. Nada aqui é cópia de produto.
 
+## Feito
+
+- Mapa de rotas internas fechado (13 rotas) com nível de confiança — [`rotas.md`](rotas.md)
+- Inventário de habilidades, ferramentas, conectores e canais — [`habilidades.md`](habilidades.md),
+  [`ferramentas.md`](ferramentas.md)
+- Catálogo interativo com 68 capacidades, busca, filtro e risco em `#/skills`
+- Laboratório da sequência de streaming em `#/stream`
+- Anatomia do composer e do balão de resposta — [`chat-e-streaming.md`](chat-e-streaming.md)
+- Distribuição de skill por repositório — [`skills-marketplace.md`](skills-marketplace.md)
+
 ## Curto prazo
 
-1. **Fechar o mapa de rotas internas.** Fazer o login funcionar (senha correta ou OAuth Google) e
-   percorrer: chat, channels, plugins, workflows, notes, files, memory, data, agent settings.
-   Registrar URL, título e elementos-chave de cada tela.
-2. **Catálogo de estados vazios e de erro** de cada área — o que mais dói em onboarding.
-3. **Índice de connectors com escopos mínimos** necessários por caso de uso.
+1. **Catálogo de estados vazios e de erro** de cada área — o que mais dói em onboarding.
+2. **Índice de connectors com escopos mínimos** necessários por caso de uso.
+3. **Estados de falha no streaming**: timeout de ferramenta, erro de crédito e reconexão, mapeados
+   quadro por quadro no laboratório.
 
 ## Médio prazo
 

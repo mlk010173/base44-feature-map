@@ -27,6 +27,10 @@ string copiada do produto original.
 ## O que funciona de verdade
 
 - Chat com envio, indicador de pensamento, passos de ferramenta e texto em streaming
+- Habilidades: catálogo com 68 capacidades (skills, famílias de ferramentas, conectores, canais e
+  mercado), busca, filtro por camada, leitura de risco e liga/desliga por item
+- Streaming: laboratório que reproduz a sequência de quadros entre envio e resposta
+  (`message.start` → `thinking` → `step.start` → `step.end` → `delta` → `message.end`)
 - Consumo de créditos, banner de créditos esgotados e simulação de upgrade
 - Nova conversa e troca entre conversas, com histórico por conversa
 - Workflows: criar, ativar, pausar, excluir e executar, com histórico de execuções
@@ -45,6 +49,8 @@ string copiada do produto original.
 - `docs/rotas.md`: mapa de rotas verificado no produto
 - `docs/chat-e-streaming.md`: anatomia do chat e do compositor
 - `docs/mapa.html`: mapa navegável de rotas e capacidades
+- `docs/ferramentas.md`: inventário de ferramentas por família
+- `docs/skills-marketplace.md`: anatomia de skill e distribuição
 
 ## Rodar local
 
@@ -63,6 +69,8 @@ python3 -m http.server 8000
 | [`docs/habilidades.md`](docs/habilidades.md) | Inventário completo de skills, ferramentas, connectors e canais |
 | [`docs/chat-e-streaming.md`](docs/chat-e-streaming.md) | Anatomia do chat do agente e do streaming de resposta |
 | [`docs/workflows-e-dados.md`](docs/workflows-e-dados.md) | Gatilhos, atividades, entidades e RLS |
+| [`docs/ferramentas.md`](docs/ferramentas.md) | Inventário completo das ferramentas por família, com efeito de cada uma |
+| [`docs/skills-marketplace.md`](docs/skills-marketplace.md) | Anatomia de uma skill, mercado, distribuição por GitHub e catálogo sugerido |
 | [`docs/roadmap.md`](docs/roadmap.md) | Propostas de melhoria (o "pra melhorar" do pedido) |
 
 ## Site

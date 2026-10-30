@@ -191,6 +191,8 @@ function renderChrome() {
   $('#countFiles').textContent = state.files.length;
   $('#countMemory').textContent = state.memories.length;
   $('#countData').textContent = state.entities.reduce((a, e) => a + e.records.length, 0);
+  const cs = $('#countSkills');
+  if (cs) cs.textContent = state.skillsOff ? CATALOG.length - Object.keys(state.skillsOff).length : CATALOG.length;
   const cc = $('#countConvs');
   if (cc) cc.textContent = state.conversations.length;
 
@@ -233,6 +235,8 @@ const TITLES = {
   library: ['Arquivos', 'Arquivos do agente'],
   memory: ['Memória', 'Fatos que o agente guarda'],
   data: ['Dados', 'Tabelas do agente'],
+  skills: ['Habilidades', 'Skills, ferramentas, conectores e canais'],
+  stream: ['Streaming', 'Como a resposta chega em pedaços'],
   settings: ['Configurações do agente', 'Modelos, permissões e plano'],
 };
 function currentView() {
@@ -1362,6 +1366,36 @@ const actions = {
     save(); closeModal(); views.data(); renderChrome(); toast('Tabela criada.');
   },
 
+  /* habilidades */
+  skillCat(el) { skillCat = el.dataset.cat; views.skills(); },
+  toggleSkill(el) {
+    const off = skillsOnMap();
+    const id = el.dataset.id;
+    if (off[id]) delete off[id]; else off[id] = true;
+    save(); views.skills(); renderChrome();
+  },
+  enableAll() {
+    state.skillsOff = {};
+    save(); views.skills(); renderChrome(); toast('Todas as habilidades ligadas.');
+  },
+
+  /* streaming */
+  playStream() {
+    if (labPlaying) { stopLab(); views.stream(); return; }
+    labFrames = []; labPlaying = true; views.stream();
+    let i = 0;
+    const step = () => {
+      if (!labPlaying) return;
+      if (i >= STREAM_FRAMES.length) { labPlaying = false; views.stream(); return; }
+      labFrames.push(STREAM_FRAMES[i]);
+      i += 1;
+      paintLab();
+      labTimer = setTimeout(step, STREAM_FRAMES[i - 1].ms);
+    };
+    labTimer = setTimeout(step, 120);
+  },
+  resetStream() { stopLab(); labFrames = []; views.stream(); },
+
   /* configurações */
   settingsTab(el) { settingsTab = el.dataset.tab; views.settings(); },
   voicePreview() { toast('Tocando prévia da voz ' + state.agent.voice + '...'); },
@@ -1424,6 +1458,225 @@ const actions = {
     state.developer.apiKey = 'sk_demo_' + Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
     save(); views.settings(); toast('Chave gerada para esta demonstração.');
   },
+};
+
+/* ============ catálogo de habilidades, ferramentas e canais ============ */
+const CATALOG = [
+  /* instrucionais */
+  { id: 'capabilities', n: 'capabilities', c: 'instrucional', r: 'leitura', d: 'Índice de capacidades: diz o que existe e qual sub-skill carregar antes de prometer algo.', t: ['roteamento', 'descoberta'] },
+  { id: 'sub-agents', n: 'sub-agents', r: 'leitura', c: 'instrucional', d: 'Delegação para workers em background com tarefas paralelas e resultado consolidado.', t: ['paralelismo', 'workers'] },
+  { id: 'chat-experience', n: 'chat-experience', c: 'instrucional', r: 'leitura', d: 'Compositor, anexos, importação do Drive, sugestões e navegador ao vivo dentro do chat.', t: ['compositor', 'anexos'] },
+  { id: 'editor-settings', n: 'editor-settings', c: 'instrucional', r: 'escrita', d: 'Modelo, memória, segurança, docs de dev, clonar, mover e excluir o agente.', t: ['modelo', 'segurança'] },
+  { id: 'sharing', n: 'sharing', c: 'instrucional', r: 'externo', d: 'Link do chat, colaboração, clone do agente e publicação de template público.', t: ['link', 'template'] },
+  { id: 'contacting-people', n: 'contacting-people', c: 'instrucional', r: 'externo', d: 'Achar contatos, ver rotas disponíveis, enviar mensagens e convites e tratar respostas.', t: ['pessoas', 'convite'] },
+  { id: 'agent-api', n: 'agent-api', c: 'instrucional', r: 'externo', d: 'API externa de conversas, mensagens, memória e mensagem direta ao agente.', t: ['api', 'integração'] },
+  { id: 'owner-management-api', n: 'owner-management-api', c: 'instrucional', r: 'escrita', d: 'Ajustes do dono: modelo principal, memória, configurações e co-proprietários.', t: ['dono', 'modelo'] },
+  { id: 'agent-webhooks', n: 'agent-webhooks', c: 'instrucional', r: 'externo', d: 'Webhooks de saída para message.created e message.completed.', t: ['webhook'] },
+  { id: 'automations', n: 'automations', c: 'instrucional', r: 'escrita', d: 'Automações agendadas, por entidade e por evento de connector.', t: ['agenda', 'gatilho'] },
+  { id: 'workflows', n: 'workflows', c: 'instrucional', r: 'escrita', d: 'Autoria, ativação e depuração de workflows com passos e ramificações.', t: ['orquestração'] },
+  { id: 'goals', n: 'goals', c: 'instrucional', r: 'escrita', d: 'Objetivos duráveis que atravessam turnos, dias e reinícios até concluir.', t: ['longo prazo'] },
+  { id: 'channel-connections', n: 'channel-connections', c: 'instrucional', r: 'externo', d: 'WhatsApp, Telegram, iMessage, Slack, LINE e Telefone: conectar e operar.', t: ['canais'] },
+  { id: 'whatsapp-groups', n: 'whatsapp-groups', c: 'instrucional', r: 'externo', d: 'Criar grupo, link de convite, modo de resposta e limite de oito números.', t: ['whatsapp'] },
+  { id: 'connectors', n: 'connectors', c: 'instrucional', r: 'externo', d: 'OAuth de terceiros, escopos mínimos e troca de conta.', t: ['oauth'] },
+  { id: 'workspace', n: 'workspace', c: 'instrucional', r: 'escrita', d: 'Arquivos do sandbox, bash, regras do agente, secrets e extensões MCP.', t: ['sandbox'] },
+  { id: 'secrets', n: 'secrets', c: 'instrucional', r: 'escrita', d: 'Captura segura de credenciais, variáveis de ambiente e detecção automática.', t: ['credenciais'] },
+  { id: 'knowledge-library', n: 'knowledge-library', c: 'instrucional', r: 'escrita', d: 'Biblioteca de conhecimento, uploads, previews e artefatos.', t: ['arquivos'] },
+  { id: 'memory-identity', n: 'memory-identity', c: 'instrucional', r: 'escrita', d: 'Identidade, memória de longo prazo, checkpoints e logs de sessão.', t: ['memória'] },
+  { id: 'tool-permissions', n: 'tool-permissions', c: 'instrucional', r: 'escrita', d: 'Auto-aprovação de ferramentas sensíveis e guardas de connector.', t: ['permissões'] },
+  { id: 'data-entities', n: 'data-entities', c: 'instrucional', r: 'escrita', d: 'Schemas de entidades e CRUD de registros, com RLS por usuário.', t: ['dados'] },
+  { id: 'backend-functions', n: 'backend-functions', c: 'instrucional', r: 'externo', d: 'Funções HTTP server-side, deploy, teste e leitura de logs.', t: ['backend'] },
+  { id: 'base44-apps', n: 'base44-apps', c: 'instrucional', r: 'externo', d: 'Listar, editar, checar e chamar apps do usuário.', t: ['apps'] },
+  { id: 'media-files', n: 'media-files', c: 'instrucional', r: 'escrita', d: 'Gerar imagem, subir arquivo, URL assinada e transcrição de áudio.', t: ['mídia'] },
+  { id: 'voice', n: 'voice', c: 'instrucional', r: 'externo', d: 'Ligações em tempo real, escolha de voz, prévia e transcrição.', t: ['voz'] },
+  { id: 'payments', n: 'payments', c: 'instrucional', r: 'externo', d: 'Instalação de meios de pagamento no app, com provedor escolhido pelo contexto.', t: ['cobrança'] },
+  { id: 'stripe-payments', n: 'stripe-payments', c: 'instrucional', r: 'externo', d: 'Produtos, preços e sessões de checkout no Stripe.', t: ['stripe'] },
+  { id: 'purchases', n: 'purchases', c: 'instrucional', r: 'externo', d: 'Comprar com Link, cartões temporários, aprovação e status do pedido.', t: ['compras'] },
+  { id: 'browser', n: 'browser', c: 'instrucional', r: 'externo', d: 'Automação de navegador: sessão, navegação, ações, extração e screenshot.', t: ['navegador'] },
+  { id: 'skills', n: 'skills', c: 'instrucional', r: 'escrita', d: 'Criar e rodar skills reutilizáveis do sandbox.', t: ['skills'] },
+  { id: 'skill-store', n: 'skill-store', c: 'instrucional', r: 'leitura', d: 'Descobrir e instalar skills do catálogo público.', t: ['marketplace'] },
+
+  /* famílias de ferramentas */
+  { id: 'f-entities', n: 'Entidades', c: 'ferramenta', r: 'escrita', d: 'manage_entity_schemas, create_entity_records, update_entities, delete_entities, read_entities.', t: ['5 ferramentas', 'dados'] },
+  { id: 'f-backend', n: 'Funções de backend', c: 'ferramenta', r: 'externo', d: 'deploy_backend_function, test_backend_function, delete_backend_function, get_backend_function_logs.', t: ['4 ferramentas'] },
+  { id: 'f-workflow', n: 'Workflows', c: 'ferramenta', r: 'escrita', d: 'get_workflow_guide, create_or_update_workflow, manage_workflow, get_workflow_run.', t: ['4 ferramentas'] },
+  { id: 'f-webhook', n: 'Webhooks de entrada', c: 'ferramenta', r: 'externo', d: 'select_or_create_workflow_webhook, request_webhook_sample e configure_email_workflows.', t: ['3 ferramentas'] },
+  { id: 'f-people', n: 'Pessoas', c: 'ferramenta', r: 'externo', d: 'manage_shared_update e manage_superagent_contacts: pedidos, respostas e trabalho dividido.', t: ['2 ferramentas'] },
+  { id: 'f-messaging', n: 'Mensageria', c: 'ferramenta', r: 'externo', d: 'show_channel_connection_options, send_image, send_whatsapp_voice_message.', t: ['3 ferramentas'] },
+  { id: 'f-phone', n: 'Telefone', c: 'ferramenta', r: 'externo', d: 'make_phone_call e manage_phone: ligar, credenciar contatos, histórico e cota.', t: ['2 ferramentas'] },
+  { id: 'f-apps', n: 'Apps Base44', c: 'ferramenta', r: 'escrita', d: 'list_base44_apps, send_message_to_builder, get_base44_app_status, call_base44_backend_function.', t: ['4 ferramentas'] },
+  { id: 'f-agentcfg', n: 'Configuração do agente', c: 'ferramenta', r: 'escrita', d: 'read_agent_api, call_agent_api e set_agent_model.', t: ['3 ferramentas'] },
+  { id: 'f-connectors', n: 'Conectores', c: 'ferramenta', r: 'externo', d: 'get_connectors_info, get_connector_token, enable_connector, request_oauth_authorization.', t: ['4 ferramentas'] },
+  { id: 'f-media', n: 'Mídia e arquivos', c: 'ferramenta', r: 'escrita', d: 'generate_image, upload_file, upload_private_file, create_file_signed_url, transcribe_audio.', t: ['5 ferramentas'] },
+  { id: 'f-browser', n: 'Navegador', c: 'ferramenta', r: 'externo', d: 'browserbase_navigate, batch, fast_nav, act, observe, extract, click, type, content, screenshot.', t: ['14 ferramentas'] },
+  { id: 'f-memory', n: 'Memória e histórico', c: 'ferramenta', r: 'escrita', d: 'save_memory, forget_memory, read_session_log, list_sessions, search_sessions, search_previous_messages.', t: ['6 ferramentas'] },
+  { id: 'f-fs', n: 'Arquivos e shell', c: 'ferramenta', r: 'escrita', d: 'read_file, write_file, grep, bash e run_skill no workspace do agente.', t: ['5 ferramentas', 'sandbox'] },
+  { id: 'f-web', n: 'Busca na web', c: 'ferramenta', r: 'leitura', d: 'web_search com busca, notícias, vagas, mapas e leitura de página.', t: ['1 ferramenta'] },
+  { id: 'f-ui', n: 'Interface', c: 'ferramenta', r: 'leitura', d: 'artifacts e ask_clarifying_questions: render no chat e escolha do usuário.', t: ['2 ferramentas'] },
+  { id: 'f-subagents', n: 'Sub-agentes', c: 'ferramenta', r: 'escrita', d: 'sub_agent, sub_agent_status, sub_agent_result e sub_agent_stop.', t: ['4 ferramentas'] },
+  { id: 'f-goals', n: 'Metas', c: 'ferramenta', r: 'escrita', d: 'manage_goal: criar, ler, avançar tarefas e concluir com critérios.', t: ['1 ferramenta'] },
+  { id: 'f-payments', n: 'Pagamentos', c: 'ferramenta', r: 'externo', d: 'suggest_payments_installation e sequence_connect_oauth.', t: ['2 ferramentas'] },
+  { id: 'f-groups', n: 'Grupos de WhatsApp', c: 'ferramenta', r: 'externo', d: 'create_whatsapp_group e list_whatsapp_groups.', t: ['2 ferramentas'] },
+  { id: 'f-safety', n: 'Utilidades', c: 'ferramenta', r: 'leitura', d: 'vent_send_feedback, invite_friend e leitura de uso de créditos.', t: ['3 ferramentas'] },
+
+  /* conectores */
+  { id: 'c-github', n: 'GitHub', c: 'conector', r: 'externo', d: 'Repos, issues, pull requests, commits e releases. Webhooks de push e PR.', t: ['repo', 'oauth'] },
+  { id: 'c-google', n: 'Google', c: 'conector', r: 'externo', d: 'Gmail, Calendar e Drive: ler, escrever e disparar workflows por evento.', t: ['gmail', 'calendar', 'drive'] },
+  { id: 'c-slack', n: 'Slack', c: 'conector', r: 'externo', d: 'Mensagens, canais e eventos em tempo real.', t: ['slack'] },
+  { id: 'c-outlook', n: 'Outlook', c: 'conector', r: 'externo', d: 'Caixa de e-mail com rotulagem e rascunho assistidos.', t: ['email'] },
+  { id: 'c-stripe', n: 'Stripe', c: 'conector', r: 'externo', d: 'Produtos, preços, checkout e eventos de cobrança.', t: ['pagamentos'] },
+
+  /* canais */
+  { id: 'ch-web', n: 'Chat web', c: 'canal', r: 'leitura', d: 'Interface principal, com artefatos, anexos e streaming.', t: ['padrão'] },
+  { id: 'ch-whatsapp', n: 'WhatsApp', c: 'canal', r: 'externo', d: 'Inbox pessoal via WhatsApp Web, voz, imagem e grupos.', t: ['meta'] },
+  { id: 'ch-telegram', n: 'Telegram', c: 'canal', r: 'externo', d: 'Bot dedicado com mensagens e arquivos.', t: ['bot'] },
+  { id: 'ch-imessage', n: 'iMessage', c: 'canal', r: 'externo', d: 'Mensagens no ecossistema Apple.', t: ['apple'] },
+  { id: 'ch-slack', n: 'Slack', c: 'canal', r: 'externo', d: 'Conector de usuário ou instalação em canal.', t: ['time'] },
+  { id: 'ch-line', n: 'LINE', c: 'canal', r: 'externo', d: 'Mensageria no mercado asiático.', t: ['bot'] },
+  { id: 'ch-phone', n: 'Telefone', c: 'canal', r: 'externo', d: 'Número dedicado dos EUA, chamadas de entrada e saída.', t: ['voz', 'plano'] },
+
+  /* mercado */
+  { id: 'm-store', n: 'Skill store', c: 'mercado', r: 'leitura', d: 'Catálogo público de skills prontas para instalar no agente.', t: ['catálogo'] },
+  { id: 'm-custom', n: 'Skill própria', c: 'mercado', r: 'escrita', d: 'Pacote local com SKILL.md e scripts/run.{sh,py,js}.', t: ['autoral'] },
+  { id: 'm-github', n: 'Skill via GitHub', c: 'mercado', r: 'externo', d: 'Distribuição por repositório: install script, licença e versionamento.', t: ['distribuição'] },
+  { id: 'm-community', n: 'Templates da comunidade', c: 'mercado', r: 'externo', d: 'Templates publicados por outros usuários para começar mais rápido.', t: ['template'] },
+];
+
+const CATLBL = { instrucional: 'Instrucional', ferramenta: 'Ferramenta', conector: 'Conector', canal: 'Canal', mercado: 'Mercado' };
+let skillQuery = '';
+let skillCat = 'todas';
+
+function skillsOnMap() {
+  if (!state.skillsOff) state.skillsOff = {};
+  return state.skillsOff;
+}
+
+views.skills = function () {
+  const off = skillsOnMap();
+  const q = skillQuery.toLowerCase();
+  const list = CATALOG.filter((s) => {
+    if (skillCat !== 'todas' && s.c !== skillCat) return false;
+    if (!q) return true;
+    return (s.n + ' ' + s.d + ' ' + s.t.join(' ')).toLowerCase().includes(q);
+  });
+  const counts = Object.keys(CATLBL).map((k) => {
+    const total = CATALOG.filter((s) => s.c === k).length;
+    return { k, total };
+  });
+  const onCount = CATALOG.filter((s) => !off[s.id]).length;
+
+  $('#view').innerHTML = `<div class="view-inner">
+    <div class="section-head">
+      <div><h2>Habilidades</h2><p>${CATALOG.length} capacidades mapeadas · ${onCount} ligadas neste agente.</p></div>
+      <button class="btn" data-act="enableAll">Ligar todas</button>
+    </div>
+    <div class="toolbar">
+      <input type="text" id="skillSearch" placeholder="Buscar habilidade, ferramenta ou canal" value="${esc(skillQuery)}" style="max-width:320px">
+      <div class="chips">
+        <button class="chip ${skillCat === 'todas' ? 'on' : ''}" data-act="skillCat" data-cat="todas">Todas <em>${CATALOG.length}</em></button>
+        ${counts.map((c) => `<button class="chip ${skillCat === c.k ? 'on' : ''}" data-act="skillCat" data-cat="${c.k}">${CATLBL[c.k]} <em>${c.total}</em></button>`).join('')}
+      </div>
+    </div>
+    ${list.length ? `<div class="cat-grid">${list.map((s) => `
+      <article class="cat-card">
+        <div class="cat-top">
+          <h3>${esc(s.n)}</h3>
+          <span class="chip tag ${s.c}">${CATLBL[s.c]}</span>
+        </div>
+        <p>${esc(s.d)}</p>
+        <div class="cat-tags">${s.t.map((t) => `<span>${esc(t)}</span>`).join('')}</div>
+        <div class="cat-foot">
+          <span class="risk ${s.r}">${s.r === 'leitura' ? 'Só leitura' : s.r === 'escrita' ? 'Escreve dados' : 'Efeito externo'}</span>
+          <button class="btn tiny ${off[s.id] ? '' : 'on'}" data-act="toggleSkill" data-id="${s.id}">${off[s.id] ? 'Desligada' : 'Ligada'}</button>
+        </div>
+      </article>`).join('')}</div>`
+      : `<div class="empty"><strong>Nada encontrado</strong><p>Tente outro termo ou troque o filtro.</p></div>`}
+  </div>`;
+
+  const inp = $('#skillSearch');
+  if (inp) inp.addEventListener('input', (e) => {
+    skillQuery = e.target.value;
+    const pos = e.target.selectionStart;
+    views.skills();
+    setTimeout(() => { const i = $('#skillSearch'); if (i) { i.focus(); i.setSelectionRange(pos, pos); } }, 0);
+  });
+};
+
+/* ============ view: streaming ============ */
+const STREAM_FRAMES = [
+  { ms: 260, t: 'message.start', raw: { type: 'message.start', conversation_id: 'conv_demo', message_id: 'msg_demo' }, note: 'Abre a mensagem que vai receber os deltas.' },
+  { ms: 520, t: 'thinking', raw: { type: 'thinking', text: 'Analisando o pedido e escolhendo o caminho.' }, note: 'Bloco de raciocínio: a interface mostra um indicador, não o texto.' },
+  { ms: 620, t: 'step.start', raw: { type: 'step.start', step_id: 's1', tool: 'read_entities', args: { entity_name: 'Projetos' } }, note: 'Chamada de ferramenta: vira um cartão com nome e argumentos.' },
+  { ms: 780, t: 'step.end', raw: { type: 'step.end', step_id: 's1', status: 'ok', ms: 412, summary: '3 registros lidos' }, note: 'Resultado da ferramenta: cartão colapsa em uma linha com status.' },
+  { ms: 300, t: 'delta', raw: { type: 'delta', text: 'Encontrei três projetos abertos. ' }, note: 'Texto em streaming: cada delta é anexado ao mesmo balão.' },
+  { ms: 320, t: 'delta', raw: { type: 'delta', text: 'O prazo mais próximo é o do site novo, na sexta.' } },
+  { ms: 700, t: 'message.end', raw: { type: 'message.end', status: 'complete', usage: { credits: 1, tokens_in: 812, tokens_out: 96 } }, note: 'Fecha a mensagem e debita créditos.' },
+];
+let labTimer = null;
+let labFrames = [];
+let labPlaying = false;
+
+function stopLab() {
+  if (labTimer) { clearTimeout(labTimer); labTimer = null; }
+  labPlaying = false;
+  const btn = $('#playStream');
+  if (btn) btn.textContent = 'Reproduzir';
+}
+
+function paintLab() {
+  const chat = $('#streamChat');
+  const raw = $('#streamRaw');
+  const log = $('#streamLog');
+  if (!chat) return;
+  const bubbles = [];
+  let text = '';
+  let steps = [];
+  labFrames.forEach((f) => {
+    if (f.t === 'delta') text += f.raw.text;
+  });
+  chat.innerHTML = `<div class="bubble user">Quais projetos estão abertos?</div>
+    <div class="bubble agent">
+      ${labFrames.some((f) => f.t === 'thinking') ? '<div class="lab-think"><i></i><i></i><i></i><span>Pensando</span></div>' : ''}
+      <div class="lab-steps">${labFrames.filter((f) => f.t === 'step.start').map((f) => {
+        const end = labFrames.find((x) => x.t === 'step.end');
+        return `<div class="lab-step ${end ? 'ok' : 'run'}">
+          <svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h10M4 17h7"/></svg>
+          <b>${esc(f.raw.tool)}</b>
+          <span>${end ? (end.raw.summary + ' · ' + end.raw.ms + ' ms') : 'executando'}</span>
+        </div>`;
+      }).join('')}</div>
+      ${text ? `<p class="lab-text">${esc(text)}${labPlaying ? '<i class="caret"></i>' : ''}</p>` : ''}
+      ${labFrames.some((f) => f.t === 'message.end') ? `<div class="lab-usage">1 crédito · 812 tokens de entrada · 96 de saída</div>` : ''}
+    </div>`;
+  raw.innerHTML = labFrames.map((f) => `<div class="raw-line"><span>${esc(f.t)}</span><code>${esc(JSON.stringify(f.raw))}</code></div>`).join('') || '<div class="raw-empty">Nada transmitido ainda.</div>';
+  if (log) log.innerHTML = labFrames.filter((f) => f.note).map((f) => `<li><b>${esc(f.t)}</b>${esc(f.note)}</li>`).join('') || '<li class="muted">Cada quadro aparece aqui com o que a interface faz com ele.</li>';
+}
+
+views.stream = function () {
+  $('#view').innerHTML = `<div class="view-inner">
+    <div class="section-head">
+      <div><h2>Streaming</h2><p>Sequência de quadros entre o envio e a resposta completa.</p></div>
+      <div style="display:flex;gap:6px">
+        <button class="btn tiny" data-act="resetStream">Limpar</button>
+        <button class="btn primary tiny" data-act="playStream" id="playStream">Reproduzir</button>
+      </div>
+    </div>
+    <div class="lab-grid">
+      <div class="panel-card">
+        <h3>No chat</h3>
+        <div class="lab-chat" id="streamChat"></div>
+      </div>
+      <div class="panel-card">
+        <h3>Quadros na rede</h3>
+        <div class="lab-raw" id="streamRaw"></div>
+      </div>
+    </div>
+    <div class="panel-card">
+      <h3>O que a interface faz com cada quadro</h3>
+      <ul class="lab-log" id="streamLog"></ul>
+    </div>
+  </div>`;
+  paintLab();
+  if (labPlaying) $('#playStream').textContent = 'Parar';
 };
 
 /* ============ eventos globais ============ */
