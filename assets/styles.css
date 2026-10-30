@@ -64,14 +64,14 @@ svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.7;stroke
 
 /* ---------- sidebar ---------- */
 .sidebar{
-  display:flex;flex-direction:column;gap:12px;
+  display:flex;flex-direction:column;gap:10px;
   background:var(--panel);
   border-right:1px solid var(--line);
   padding:16px 12px 12px;
   overflow:hidden;min-height:0;
 }
 .side-scroll{
-  display:flex;flex-direction:column;gap:12px;
+  display:flex;flex-direction:column;gap:10px;
   flex:1;min-height:0;overflow-y:auto;scrollbar-width:thin;
   margin:0 -4px;padding:0 4px;
 }
@@ -97,11 +97,11 @@ svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.7;stroke
 }
 .switch button.on{background:var(--panel);color:var(--text);box-shadow:0 1px 2px rgba(16,18,24,.08)}
 
-.nav{display:flex;flex-direction:column;gap:2px}
+.nav{display:flex;flex-direction:column;gap:1px}
 .nav-item{
   display:flex;align-items:center;gap:10px;width:100%;
   border:0;background:transparent;border-radius:9px;
-  padding:8px 9px;font-size:13.5px;color:var(--text);text-align:left;
+  padding:6px 9px;font-size:13.5px;color:var(--text);text-align:left;
 }
 .nav-item span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .nav-item svg{color:var(--muted);flex:none}
@@ -111,7 +111,7 @@ svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.7;stroke
 .nav-item.sub{padding-left:9px;font-size:13px;color:var(--muted)}
 .nav-item.sub.on{color:var(--accent)}
 .nav-label{
-  margin:10px 0 2px;padding:0 9px;font-size:11px;font-weight:700;letter-spacing:.08em;
+  margin:6px 0 2px;padding:0 9px;font-size:11px;font-weight:700;letter-spacing:.08em;
   text-transform:uppercase;color:var(--muted-2);
 }
 .count{
@@ -119,10 +119,10 @@ svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.7;stroke
   background:var(--panel-2);border:1px solid var(--line);border-radius:20px;padding:1px 7px;
 }
 
-.conversations{display:flex;flex-direction:column;gap:1px;min-height:40px}
+.conversations{display:flex;flex-direction:column;gap:1px;min-height:34px;max-height:156px;overflow-y:auto;scrollbar-width:thin}
 .conv{
   display:flex;flex-direction:column;align-items:flex-start;gap:2px;width:100%;
-  border:0;background:transparent;border-radius:9px;padding:7px 9px;text-align:left;
+  border:0;background:transparent;border-radius:9px;padding:5px 9px;text-align:left;
 }
 .conv:hover{background:var(--panel-2)}
 .conv.on{background:var(--panel-2);box-shadow:inset 2px 0 0 var(--accent)}
@@ -131,12 +131,12 @@ svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.7;stroke
 .empty-mini{padding:6px 9px;font-size:12px;color:var(--muted-2)}
 
 .side-foot{display:flex;flex-direction:column;gap:8px;padding-top:6px;border-top:1px solid var(--line-soft)}
-.setup-card,.plan-card{border:1px solid var(--line);border-radius:var(--radius);background:var(--panel-2);padding:10px}
+.setup-card,.plan-card{border:1px solid var(--line);border-radius:var(--radius);background:var(--panel-2);padding:9px}
 .setup-top{display:flex;gap:8px;align-items:flex-start}
 .setup-top strong{display:block;font-size:12.5px}
 .setup-top span{font-size:11.5px;color:var(--muted)}
 .setup-top .icon-btn{margin-left:auto;width:24px;height:24px}
-.bar{height:5px;border-radius:99px;background:var(--line);overflow:hidden;margin:8px 0}
+.bar{height:5px;border-radius:99px;background:var(--line);overflow:hidden;margin:6px 0}
 .bar.slim{height:4px;margin:6px 0 0}
 .bar i{display:block;height:100%;background:var(--accent);border-radius:99px;transition:width .3s}
 .setup-card .btn{width:100%}
@@ -146,7 +146,7 @@ svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.7;stroke
 .crown{position:absolute;right:8px;top:8px;color:var(--warn)}
 .crown svg{width:15px;height:15px}
 
-.user{display:flex;align-items:center;gap:9px;padding:4px 4px 2px}
+.user{display:flex;align-items:center;gap:9px;padding:2px 4px 0}
 .avatar{width:30px;height:30px;border-radius:50%;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font-size:12px;font-weight:700}
 .user-meta{display:flex;flex-direction:column;min-width:0;line-height:1.25}
 .user-meta .ws{font-size:11.5px;color:var(--muted-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
