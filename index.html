@@ -1,337 +1,151 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-theme="light">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Mapa da Plataforma — rotas, skills e ferramentas</title>
-<meta name="description" content="Mapa independente de rotas, skills, ferramentas e áreas de produto, com busca e filtros.">
-<style>
-  :root{
-    --bg:#0e0f12; --bg-soft:#15171c; --card:#1a1d23; --line:#2a2e37;
-    --txt:#eceef2; --muted:#9aa2b1; --accent:#7c5cff; --accent-soft:#2a2350;
-    --ok:#3fbf7f; --warn:#e3b341; --bad:#e05c5c;
-    --radius:14px; --max:1120px;
-  }
-  @media (prefers-color-scheme: light){
-    :root{
-      --bg:#fbfaf8; --bg-soft:#f2f0ec; --card:#ffffff; --line:#e3e0d9;
-      --txt:#15171c; --muted:#6b7280; --accent:#5b3df0; --accent-soft:#eeebff;
-      --ok:#1e8f5c; --warn:#a8741a; --bad:#c33b3b;
-    }
-  }
-  *{box-sizing:border-box}
-  html{scroll-behavior:smooth}
-  body{
-    margin:0; background:var(--bg); color:var(--txt);
-    font:16px/1.6 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-    -webkit-font-smoothing:antialiased;
-  }
-  a{color:var(--accent)}
-  .wrap{max-width:var(--max);margin:0 auto;padding:0 24px}
-
-  header.top{border-bottom:1px solid var(--line);background:var(--bg-soft)}
-  .hero{padding:64px 0 40px}
-  .badge{
-    display:inline-flex;align-items:center;gap:8px;font-size:12px;letter-spacing:.08em;
-    text-transform:uppercase;color:var(--muted);border:1px solid var(--line);
-    padding:6px 12px;border-radius:999px;background:var(--card)
-  }
-  h1{font-size:clamp(30px,4.4vw,46px);line-height:1.1;margin:20px 0 14px;letter-spacing:-.02em}
-  .lede{color:var(--muted);max-width:62ch;font-size:17px;margin:0}
-  .stats{display:flex;gap:32px;flex-wrap:wrap;margin-top:32px}
-  .stat b{display:block;font-size:26px;letter-spacing:-.01em}
-  .stat span{color:var(--muted);font-size:13px}
-
-  .toolbar{
-    position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 88%,transparent);
-    backdrop-filter:blur(10px);border-bottom:1px solid var(--line);
-  }
-  .toolbar-inner{display:flex;gap:12px;align-items:center;padding:14px 0;flex-wrap:wrap}
-  .search{
-    flex:1 1 280px;display:flex;align-items:center;gap:10px;background:var(--card);
-    border:1px solid var(--line);border-radius:10px;padding:10px 14px
-  }
-  .search input{
-    all:unset;flex:1;color:var(--txt);font-size:15px
-  }
-  .search input::placeholder{color:var(--muted)}
-  .chips{display:flex;gap:8px;flex-wrap:wrap}
-  .chip{
-    cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--muted);
-    border-radius:999px;padding:7px 14px;font-size:13px;transition:.15s
-  }
-  .chip:hover{color:var(--txt);border-color:var(--accent)}
-  .chip[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--txt)}
-
-  main{padding:44px 0 80px}
-  section{margin-bottom:56px;scroll-margin-top:90px}
-  h2{font-size:22px;letter-spacing:-.01em;margin:0 0 6px}
-  .sub{color:var(--muted);font-size:14px;margin:0 0 22px}
-
-  .grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(255px,1fr))}
-  .card{
-    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px;
-    transition:.15s
-  }
-  .card:hover{border-color:var(--accent);transform:translateY(-1px)}
-  .card h3{margin:0 0 6px;font-size:15px;letter-spacing:-.01em}
-  .card p{margin:0;color:var(--muted);font-size:13.5px}
-  .tag{
-    display:inline-block;font-size:11px;text-transform:uppercase;letter-spacing:.06em;
-    color:var(--accent);background:var(--accent-soft);border-radius:6px;padding:3px 7px;margin-bottom:10px
-  }
-
-  table{width:100%;border-collapse:collapse;font-size:14px}
-  th,td{text-align:left;padding:11px 12px;border-bottom:1px solid var(--line);vertical-align:top}
-  th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.06em}
-  code{
-    font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
-    background:var(--bg-soft);border:1px solid var(--line);border-radius:6px;padding:2px 6px
-  }
-  .pill{font-size:11.5px;border-radius:999px;padding:2px 9px;white-space:nowrap;border:1px solid}
-  .pill.ok{color:var(--ok);border-color:color-mix(in srgb,var(--ok) 40%,transparent)}
-  .pill.doc{color:var(--warn);border-color:color-mix(in srgb,var(--warn) 40%,transparent)}
-  .pill.pend{color:var(--bad);border-color:color-mix(in srgb,var(--bad) 40%,transparent)}
-  .tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:var(--radius);background:var(--card)}
-
-  .note{
-    border-left:3px solid var(--warn);background:var(--card);border-radius:0 var(--radius) var(--radius) 0;
-    padding:16px 18px;color:var(--muted);font-size:14px
-  }
-  .note strong{color:var(--txt)}
-
-  .flow{display:grid;gap:10px}
-  .step{
-    display:flex;gap:14px;align-items:flex-start;background:var(--card);border:1px solid var(--line);
-    border-radius:var(--radius);padding:14px 16px
-  }
-  .step b{font-size:13px;color:var(--accent);min-width:22px}
-  .step p{margin:0;font-size:14px;color:var(--muted)}
-  .step p strong{color:var(--txt);display:block;font-size:14.5px;margin-bottom:2px}
-
-  footer{border-top:1px solid var(--line);background:var(--bg-soft);padding:28px 0;color:var(--muted);font-size:13px}
-  .empty{color:var(--muted);font-size:14px;padding:28px 0;display:none}
-  .hidden{display:none !important}
-  @media (max-width:640px){
-    .hero{padding:44px 0 28px}
-    .stats{gap:22px}
-  }
-</style>
+<title>Superagente · interface</title>
+<meta name="description" content="Interface funcional do Superagente: chat com streaming, workflows, plugins, canais, notas, arquivos, memória, dados e configurações.">
+<link rel="stylesheet" href="assets/styles.css">
 </head>
 <body>
+<div class="app" id="app">
 
-<header class="top">
-  <div class="wrap hero">
-    <span class="badge">Documentação independente</span>
-    <h1>Mapa da plataforma: rotas, skills e ferramentas</h1>
-    <p class="lede">Um índice navegável de áreas do produto, capacidades do agente, integrações e dados.
-      Sem clone, sem código proprietário: só o mapa, organizado para consulta rápida.</p>
-    <div class="stats">
-      <div class="stat"><b id="st-cards">0</b><span>itens mapeados</span></div>
-      <div class="stat"><b id="st-routes">0</b><span>rotas e áreas</span></div>
-      <div class="stat"><b>4</b><span>camadas</span></div>
-      <div class="stat"><b id="st-pend">0</b><span>pendências</span></div>
+  <aside class="sidebar" aria-label="Navegação do agente">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">S</div>
+      <span class="brand-name">Superagente</span>
+      <button class="icon-btn" id="themeToggle" title="Alternar tema" aria-label="Alternar tema">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v2m0 14v2M3 12h2m14 0h2M5.6 5.6l1.4 1.4m10 10 1.4 1.4m0-12.8-1.4 1.4m-10 10L5.6 18.4"/><circle cx="12" cy="12" r="4"/></svg>
+      </button>
     </div>
-  </div>
-</header>
 
-<div class="toolbar">
-  <div class="wrap toolbar-inner">
-    <label class="search">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-        <circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>
-      </svg>
-      <input id="q" type="search" placeholder="Buscar rota, skill, ferramenta, canal…" aria-label="Buscar no mapa">
-    </label>
-    <div class="chips" role="group" aria-label="Filtrar por camada">
-      <button class="chip" data-f="all" aria-pressed="true">Tudo</button>
-      <button class="chip" data-f="produto" aria-pressed="false">Produto</button>
-      <button class="chip" data-f="agente" aria-pressed="false">Agente</button>
-      <button class="chip" data-f="integracoes" aria-pressed="false">Integrações</button>
-      <button class="chip" data-f="dados" aria-pressed="false">Dados</button>
+    <div class="switch" role="tablist" aria-label="Contexto">
+      <button role="tab" aria-selected="false" data-context="apps">Apps</button>
+      <button role="tab" aria-selected="true" data-context="agent" class="on">Agente</button>
     </div>
+
+    <nav class="nav" aria-label="Seções do agente">
+      <button class="nav-item" data-view="chat" data-new="1">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+        <span>Nova conversa</span>
+      </button>
+      <button class="nav-item" data-view="tasks">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 7v5l3 2"/><circle cx="12" cy="12" r="9"/></svg>
+        <span>Workflows</span>
+        <em class="count" id="countTasks">0</em>
+      </button>
+      <button class="nav-item" data-view="integrations">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3v4M15 3v4M6 7h12v5a6 6 0 0 1-12 0z"/><path d="M12 18v3"/></svg>
+        <span>Plugins</span>
+        <em class="count" id="countPlugins">0</em>
+      </button>
+      <button class="nav-item" data-view="channels">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16v10H8l-4 4z"/></svg>
+        <span>Canais</span>
+      </button>
+      <button class="nav-item" data-view="notes">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h9l4 4v14H6z"/><path d="M9 9h7M9 13h7M9 17h4"/></svg>
+        <span>Notas</span>
+        <em class="count" id="countNotes">0</em>
+      </button>
+      <button class="nav-item" data-view="settings">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a7.9 7.9 0 0 0 .1-1 7.9 7.9 0 0 0-.1-1l2-1.6-2-3.4-2.4 1a8 8 0 0 0-1.7-1L15 4h-4l-.4 2.5a8 8 0 0 0-1.7 1l-2.4-1-2 3.4L6.5 13a7.9 7.9 0 0 0 0 2l-2 1.6 2 3.4 2.4-1a8 8 0 0 0 1.7 1L11 22h4l.4-2.5a8 8 0 0 0 1.7-1l2.4 1 2-3.4z"/></svg>
+        <span>Configurações</span>
+      </button>
+
+      <p class="nav-label">Mais</p>
+      <button class="nav-item sub" data-view="library">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h6l2 2h10v10H3z"/></svg>
+        <span>Arquivos</span>
+        <em class="count" id="countFiles">0</em>
+      </button>
+      <button class="nav-item sub" data-view="memory">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4a4 4 0 0 0-4 4 4 4 0 0 0 0 8 4 4 0 0 0 8 0 4 4 0 0 0 0-8 4 4 0 0 0-4-4z"/></svg>
+        <span>Memória</span>
+        <em class="count" id="countMemory">0</em>
+      </button>
+      <button class="nav-item sub" data-view="data">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v12c0 1.7 3.1 3 7 3s7-1.3 7-3V6"/><path d="M5 12c0 1.7 3.1 3 7 3s7-1.3 7-3"/></svg>
+        <span>Dados</span>
+        <em class="count" id="countData">0</em>
+      </button>
+    </nav>
+
+    <p class="nav-label conversations-label">Conversas</p>
+    <div class="conversations" id="conversations" role="list"></div>
+
+    <div class="side-foot">
+      <div class="setup-card" id="setupCard">
+        <div class="setup-top">
+          <div>
+            <strong>Configure seu agente</strong>
+            <span id="setupProgressText">3 de 5 concluídos</span>
+          </div>
+          <button class="icon-btn bare" data-dismiss="setup" aria-label="Dispensar">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+          </button>
+        </div>
+        <div class="bar"><i id="setupBar" style="width:60%"></i></div>
+        <button class="btn tiny" data-view="settings">Continuar</button>
+      </div>
+
+      <div class="plan-card">
+        <div class="crown" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M3 8l4 3 5-6 5 6 4-3-2 11H5z"/></svg>
+        </div>
+        <strong>Créditos</strong>
+        <span id="planLine">18 de 25 usados</span>
+        <div class="bar slim"><i id="planBar" style="width:72%"></i></div>
+      </div>
+
+      <div class="user">
+        <div class="avatar" id="userInitials">BG</div>
+        <div class="user-meta">
+          <span class="ws" id="userWorkspace">Workspace</span>
+          <span class="nm" id="userName">Você</span>
+        </div>
+        <button class="icon-btn bare bell" id="bellBtn" aria-label="Notificações">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9a6 6 0 0 1 12 0c0 4 2 5 2 5H4s2-1 2-5"/><path d="M10 20a2 2 0 0 0 4 0"/></svg>
+          <em id="bellCount">2</em>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main" id="main">
+    <header class="topbar">
+      <div class="topbar-left">
+        <div class="agent-mark" aria-hidden="true">S</div>
+        <div>
+          <h1 id="pageTitle">Superagente</h1>
+          <p id="pageSub">Pronto para ajudar</p>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <span class="pill" id="creditPill">7 créditos</span>
+        <button class="btn tiny ghost" id="resetDemo">Restaurar demo</button>
+      </div>
+    </header>
+    <div class="view" id="view" tabindex="-1"></div>
+  </main>
+</div>
+
+<div class="modal-root" id="modalRoot" hidden>
+  <div class="modal-backdrop" data-close="1"></div>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <header class="modal-head">
+      <h2 id="modalTitle">Título</h2>
+      <button class="icon-btn bare" data-close="1" aria-label="Fechar">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </header>
+    <div class="modal-body" id="modalBody"></div>
+    <footer class="modal-foot" id="modalFoot"></footer>
   </div>
 </div>
 
-<main class="wrap">
-  <p class="empty" id="empty">Nada encontrado com esse termo.</p>
+<div class="toasts" id="toasts" aria-live="polite" aria-atomic="false"></div>
 
-  <section id="rotas">
-    <h2>Rotas e áreas</h2>
-    <p class="sub">Público verificado, documentado e o que ainda depende de sessão autenticada.</p>
-    <div class="tablewrap">
-      <table>
-        <thead><tr><th>Rota / área</th><th>Função</th><th>Camada</th><th>Confiança</th></tr></thead>
-        <tbody id="routes-body"></tbody>
-      </table>
-    </div>
-  </section>
-
-  <section id="mapa">
-    <h2>Mapa de capacidades</h2>
-    <p class="sub">Filtre acima para ver só uma camada.</p>
-    <div class="grid" id="cards"></div>
-  </section>
-
-  <section id="streaming">
-    <h2>Como o chat responde</h2>
-    <p class="sub">Estados que uma interface de conversa precisa renderizar.</p>
-    <div class="flow">
-      <div class="step"><b>1</b><p><strong>Envio</strong>Bolha otimista aparece antes da confirmação do servidor.</p></div>
-      <div class="step"><b>2</b><p><strong>Pensando</strong>Indicador de atividade enquanto o modelo planeja.</p></div>
-      <div class="step"><b>3</b><p><strong>Streaming</strong>Texto cresce token a token, sem re-renderizar a lista inteira.</p></div>
-      <div class="step"><b>4</b><p><strong>Ferramenta</strong>Bloco intercalado no stream: nome, argumentos, status e resultado.</p></div>
-      <div class="step"><b>5</b><p><strong>Fim</strong>Ações de copiar e regenerar; auto-scroll só se o usuário estiver no fim.</p></div>
-    </div>
-  </section>
-
-  <section id="nota">
-    <div class="note">
-      <strong>Sessão verificada.</strong> O mapa foi levantado com login real em <code>app.base44.com</code>,
-      conferindo cada rota da sidebar. Duas ressalvas: a conta usada está com
-      <strong>0 créditos</strong>, então não foi possível exercitar uma resposta completa do agente
-      em streaming; e itens marcados como <em>observada</em> aparecem no menu mas tiveram a URL
-      inferida. As rotas centralizadas em <code>/superagent/{id}</code> foram todas confirmadas.
-    </div>
-  </section>
-</main>
-
-<footer>
-  <div class="wrap">
-    Projeto não oficial, sem vínculo com a Base44. Fontes: documentação pública e observação da interface
-    pública. Marcas pertencem aos seus donos.
-  </div>
-</footer>
-
-<script>
-const routes = [
-  ["app.base44.com","Aplicação web: apps, agentes e conectores","produto","ok"],
-  ["/login","Google, Apple, GitHub ou e-mail + senha (Turnstile)","produto","ok"],
-  ["/","Home: \"Hi {nome}. What will you build next?\" + Auto/Build","produto","ok"],
-  ["/apps","Lista de apps, New folder, Create app, filtros","produto","ok"],
-  ["/app-templates","Templates de app","produto","ok"],
-  ["/connectors","Manage connectors, Add connector, contas conectadas","integracoes","ok"],
-  ["/base-code","Base Code","produto","obs"],
-  ["/community","Community","produto","obs"],
-  ["/basecamp","Basecamp","produto","obs"],
-  ["/launchpad","Launchpad","produto","obs"],
-  ["/partners","Partners","produto","obs"],
-  ["/messages","Messages","produto","obs"],
-  ["/superagent/{id}","Chat do agente: mensagens, Thinking..., compositor","agente","ok"],
-  ["/superagent/{id}/tasks","Workflows: agendados, gatilhos, atividade","agente","ok"],
-  ["/superagent/{id}/integrations","Plugins: abas Connectors e Skills","integracoes","ok"],
-  ["/superagent/{id}/settings","Agent Settings: General, Trusted people, Credit usage","produto","ok"],
-  ["/superagent/{id}/settings?panel=channels","Channels: WhatsApp, Telegram, iMessage, Slack, Phone","integracoes","ok"],
-  ["/superagent/{id}/notes","Notes","agente","ok"],
-  ["/superagent/{id}/library","Files (menu More)","dados","ok"],
-  ["/superagent/{id}/memory","Memory (menu More)","agente","ok"],
-  ["/superagent/{id}/data","Data (menu More)","dados","ok"],
-  ["base44.com","Site institucional, preços, templates, blog","produto","ok"],
-  ["docs.base44.com","Documentação, com /llms.txt","produto","ok"]
-];
-
-const cards = [
-  ["agente","Chat",  "Rótulo de autor, horário, blocos ricos e indicador Thinking..."],
-  ["agente","Compositor","Anexo (+), seletor de modelo Auto, ditado por microfone, modo voz."],
-  ["agente","Workflows","Rota própria /tasks: agendados, gatilhos e histórico de execução."],
-  ["agente","Notes","Estado vazio com Add new note e Build from memory."],
-  ["agente","Memory","Fatos duráveis, contexto de trabalho e log diário de conversas."],
-  ["agente","Data","Tabelas do agente: registros, estrutura, export e restauração."],
-  ["agente","Sub-agents","Workers em background, até 12 em paralelo por conversa."],
-  ["agente","Voz","Conversa em tempo real com compartilhamento de tela e câmera."],
-  ["agente","Meetings","Entra na reunião como notetaker e salva notas e action items."],
-
-  ["integracoes","Plugins","Uma página, duas abas: Connectors e Skills, com Add Connector."],
-  ["integracoes","Connectors","Cartões por serviço, status Active e escopo (ex.: Read only)."],
-  ["integracoes","Channels","Painel dentro de settings, não rota própria."],
-  ["integracoes","WhatsApp","Connected com número mascarado e botão Manage."],
-  ["integracoes","Telegram","Bot privado criado em um clique."],
-  ["integracoes","iMessage","Verificação por código enviado do iPhone ou Mac."],
-  ["integracoes","Slack","Menção @Superagent no canal, resposta na thread."],
-  ["integracoes","Phone","Número dedicado após verificar o número do dono."],
-  ["integracoes","Browser extension","Agente usa o seu navegador para navegar e preencher formulários."],
-
-  ["dados","Files","Rota /library, árvore por pastas (.agents, base44, conversations)."],
-  ["dados","Entidades","Schemas JSON com id, created_date, updated_date, created_by."],
-  ["dados","RLS","Isolamento por criador para não-admin; admin enxerga tudo."],
-  ["dados","Backend functions","HTTP server-side para APIs externas e transformação."],
-  ["dados","Arquivos","Upload público, privado com URL assinada, e assets do agente."],
-  ["dados","Transcrição","Áudio para texto em ogg, mp3, wav, webm, m4a, flac."],
-
-  ["produto","Modelos","Dois seletores no General: Chat e Automations, ambos Automatic."],
-  ["produto","Cross-app access","All workspace apps; ações interativas usam as permissões de quem conversa."],
-  ["produto","Voz do agente","Seletor com preview (padrão Kore)."],
-  ["produto","Template público","Share gera link de cópia do agente, sem conectores."],
-  ["produto","Exclusão","Recently deleted por 30 dias; integrações desconectam na hora."],
-  ["produto","Onboarding","Cartão 4 of 5 complete com Finish setup na sidebar."],
-  ["produto","Créditos","Banner substitui a experiência normal quando zera; renova por data."],
-  ["produto","Permissões","Agente de outro workspace abre erro de acesso, não 404."],
-  ["produto","Pagamentos","Cobrança, produtos, preços e checkout."]
-];
-
-const conf = {ok:["ok","verificada"],doc:["doc","documentada"],pend:["pend","pendente"],obs:["doc","observada"]};
-
-function renderRoutes(filter, q){
-  const body = document.getElementById("routes-body");
-  body.innerHTML = "";
-  let shown = 0;
-  routes.forEach(([path,desc,layer,c]) => {
-    const hay = (path+" "+desc+" "+layer).toLowerCase();
-    if(filter !== "all" && layer !== filter) return;
-    if(q && !hay.includes(q)) return;
-    const tr = document.createElement("tr");
-    tr.innerHTML =
-      `<td><code>${path}</code></td><td>${desc}</td><td>${layer}</td>` +
-      `<td><span class="pill ${c}">${conf[c][1]}</span></td>`;
-    body.appendChild(tr);
-    shown++;
-  });
-  return shown;
-}
-
-function renderCards(filter, q){
-  const grid = document.getElementById("cards");
-  grid.innerHTML = "";
-  let shown = 0;
-  cards.forEach(([layer,title,desc]) => {
-    const hay = (title+" "+desc+" "+layer).toLowerCase();
-    if(filter !== "all" && layer !== filter) return;
-    if(q && !hay.includes(q)) return;
-    const div = document.createElement("div");
-    div.className = "card";
-    div.innerHTML = `<span class="tag">${layer}</span><h3>${title}</h3><p>${desc}</p>`;
-    grid.appendChild(div);
-    shown++;
-  });
-  return shown;
-}
-
-let active = "all";
-function update(){
-  const q = document.getElementById("q").value.trim().toLowerCase();
-  const a = renderRoutes(active, q);
-  const b = renderCards(active, q);
-  document.getElementById("empty").style.display = (a + b === 0) ? "block" : "none";
-  document.querySelectorAll("section").forEach(s => {
-    if(s.id === "rotas") s.classList.toggle("hidden", a === 0);
-    if(s.id === "mapa") s.classList.toggle("hidden", b === 0);
-  });
-}
-
-document.querySelectorAll(".chip").forEach(btn => {
-  btn.addEventListener("click", () => {
-    document.querySelectorAll(".chip").forEach(b => b.setAttribute("aria-pressed","false"));
-    btn.setAttribute("aria-pressed","true");
-    active = btn.dataset.f;
-    update();
-  });
-});
-document.getElementById("q").addEventListener("input", update);
-
-document.getElementById("st-cards").textContent = cards.length;
-document.getElementById("st-routes").textContent = routes.length;
-document.getElementById("st-pend").textContent = routes.filter(r => r[3] === "pend").length;
-update();
-</script>
+<script src="assets/app.js"></script>
 </body>
 </html>

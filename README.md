@@ -1,15 +1,45 @@
-# Base44 / Superagent — Mapa de Recursos e Rotas
+# Interface do Superagente
 
-Documentação independente que organiza, em um só lugar, **o que existe na plataforma Base44**:
-áreas do produto, rotas públicas verificadas, plugins/connectors, skills, ferramentas do agente,
-workflows, entidades de dados, canais de mensagem e o funcionamento do chat.
+Interface funcional (HTML, CSS e JavaScript puros, sem build) que reproduz a experiência do
+Superagente da Base44 com tudo o que foi mapeado: chat com streaming simulado, workflows,
+plugins, canais, notas, arquivos, memória, dados e configurações.
 
-O site deste repositório (GitHub Pages) é uma interface própria de navegação e busca sobre esse mapa.
-Ele **não** é um clone do Base44, **não** contém código proprietário e **não** reimplementa o
-Superagent de IA — conforme o escopo pedido.
+**Demo:** https://mlk010173.github.io/base44-feature-map/
 
-> Projeto não oficial, sem vínculo com a Base44. Marcas citadas pertencem aos seus donos.
-> Fontes: documentação pública em <https://docs.base44.com> e observação da interface pública.
+Não é cópia: o visual, o texto e o código são próprios, escritos a partir do mapa de
+rotas e da anatomia da interface documentados aqui. Nenhum asset, CSS ou código do produto
+original foi usado.
+
+## O que funciona de verdade
+
+- Chat com envio, indicador de pensamento, passos de ferramenta e texto em streaming
+- Consumo de créditos, banner de créditos esgotados e simulação de upgrade
+- Nova conversa e troca entre conversas, com histórico por conversa
+- Workflows: criar, ativar, pausar, excluir e executar, com histórico de execuções
+- Plugins: aba de conectores (conectar e desconectar) e de skills (ligar e desligar)
+- Canais: conectar, gerenciar e desconectar, incluindo WhatsApp com número mascarado
+- Notas, arquivos, memória e tabelas de dados com criação e exclusão
+- Configurações: modelos, acesso entre apps, voz, template, pessoas de confiança,
+  uso de créditos, reuniões, segurança e área de desenvolvedor
+- Tema claro e escuro, estado persistido no `localStorage`, layout responsivo
+
+## Estrutura
+
+- `index.html`: shell da aplicação (sidebar, topo, área de visão, modal, toasts)
+- `assets/styles.css`: tokens de design, layout e componentes
+- `assets/app.js`: estado, roteador por hash, nove views e o motor de streaming
+- `docs/rotas.md`: mapa de rotas verificado no produto
+- `docs/chat-e-streaming.md`: anatomia do chat e do compositor
+- `docs/mapa.html`: mapa navegável de rotas e capacidades
+
+## Rodar local
+
+```bash
+python3 -m http.server 8000
+# abra http://localhost:8000
+```
+
+---
 
 ## Conteúdo
 
