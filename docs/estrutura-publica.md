@@ -32,7 +32,7 @@ O `/llms.txt` publica o mapa completo da documentação em Markdown. Aqui ele é
 dado, em [`../data/docs.json`](../data/docs.json) e no pacote do site (`assets/dados.js`):
 
 - **61 seções**, **971 páginas**;
-- seções por área: Apps (14), Superagents (3), Integrations (4), Developers (20+);
+- seções por área: Apps (12), Superagents (3), Integrations (4), Developers (25), Conta e cobrança (5), Enterprise (5);
 - cada página traz título, caminho, URL `.md` e resumo de uma linha.
 
 Seções mais úteis para quem está mapeando o Superagente:
@@ -42,10 +42,10 @@ Seções mais úteis para quem está mapeando o Superagente:
 | `Superagents: Getting started` | 2 | o que é um agente e como criar |
 | `Superagents: Using your Superagent` | 5 | chat, canais, arquivos e memória |
 | `Managing Superagents` | 3 | modelos, ajustes e exclusão |
-| `Integrations: Connectors` | 11 | OAuth e catálogo de conectores |
-| `Integrations: MCP` | 4 | extensões por MCP |
-| `Developers: APIs — Superagents API` | — | superfície HTTP do agente |
-| `Developers: CLI — Commands` | — | comandos e automação local |
+| `Integrations: Connectors` | 8 | OAuth e catálogo de conectores |
+| `Integrations: MCP` | 2 | extensões por MCP |
+| `Developers: APIs — Superagents API` | 15 | superfície HTTP do agente |
+| `Developers: CLI — Commands` | 57 | comandos e automação local |
 
 O mapa navegável fica em `#/mapa`: busca em todas as rotas e em todas as páginas, com filtro por
 seção e abertura do documento original.

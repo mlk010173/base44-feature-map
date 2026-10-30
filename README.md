@@ -31,7 +31,7 @@ string copiada do produto original.
   mercado), busca, filtro por camada, leitura de risco e liga/desliga por item
 - Streaming: laboratório que reproduz a sequência de quadros entre envio e resposta
   (`message.start` → `thinking` → `step.start` → `step.end` → `delta` → `message.end`)
-- Mapa: 37 rotas mapeadas em cinco grupos, mais as 971 páginas da documentação pública em 61
+- Mapa: 34 rotas mapeadas em cinco grupos, mais as 971 páginas da documentação pública em 61
   seções, com busca, filtro por seção e abertura do documento original
 - Consumo de créditos, banner de créditos esgotados e simulação de upgrade
 - Nova conversa e troca entre conversas, com histórico por conversa
