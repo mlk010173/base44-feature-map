@@ -236,6 +236,7 @@ const TITLES = {
   memory: ['Memória', 'Fatos que o agente guarda'],
   data: ['Dados', 'Tabelas do agente'],
   skills: ['Habilidades', 'Skills, ferramentas, conectores e canais'],
+  mapa: ['Mapa', 'Rotas e documentação pública'],
   stream: ['Streaming', 'Como a resposta chega em pedaços'],
   settings: ['Configurações do agente', 'Modelos, permissões e plano'],
 };
@@ -1379,6 +1380,15 @@ const actions = {
     save(); views.skills(); renderChrome(); toast('Todas as habilidades ligadas.');
   },
 
+  /* mapa */
+  mapaTab(el) { mapaTab = el.dataset.tab; mapaLimit = 48; views.mapa(); },
+  mapaMore() { mapaLimit += 48; views.mapa(); },
+  openDoc(el) {
+    const url = el.dataset.url;
+    if (!url) return;
+    window.open(url, '_blank', 'noopener');
+  },
+
   /* streaming */
   playStream() {
     if (labPlaying) { stopLab(); views.stream(); return; }
@@ -1677,6 +1687,99 @@ views.stream = function () {
   </div>`;
   paintLab();
   if (labPlaying) $('#playStream').textContent = 'Parar';
+};
+
+/* ============ view: mapa de rotas e documentação ============ */
+let mapaTab = 'rotas';
+let mapaQuery = '';
+let mapaSec = 'todas';
+let mapaLimit = 48;
+
+const ESTADO_CLS = { verificada: 'ok', documentada: 'doc', observada: 'obs' };
+
+function mapaData() {
+  const R = window.ROTAS || { dominios: [], publicas: [], app: [], agente: [], ajustes: [] };
+  const D = window.DOCS || { sections: [] };
+  return { R, D };
+}
+
+views.mapa = function () {
+  const { R, D } = mapaData();
+  const q = mapaQuery.trim().toLowerCase();
+  const totalRotas = R.publicas.length + R.app.length + R.agente.length + R.ajustes.length;
+  const totalDocs = D.sections.reduce((a, s) => a + s.pages.length, 0);
+
+  const grupos = [
+    ['Públicas (sem login)', R.publicas],
+    ['Workspace', R.app],
+    ['Agente', R.agente],
+    ['Agent Settings', R.ajustes],
+  ].map(([nome, itens]) => ({
+    nome,
+    itens: itens.filter((r) => !q || (r.p + ' ' + r.area + ' ' + r.nota).toLowerCase().includes(q)),
+  })).filter((g) => g.itens.length);
+
+  const docsSecs = D.sections.filter((s) => mapaSec === 'todas' || s.name === mapaSec);
+  let docs = [];
+  docsSecs.forEach((s) => s.pages.forEach((p) => docs.push({ ...p, sec: s.name })));
+  if (q) docs = docs.filter((p) => (p.t + ' ' + p.p + ' ' + p.d).toLowerCase().includes(q));
+  const docsShown = docs.slice(0, mapaLimit);
+
+  $('#view').innerHTML = `<div class="view-inner">
+    <div class="section-head">
+      <div><h2>Mapa</h2><p>${totalRotas} rotas mapeadas · ${totalDocs} páginas de documentação em ${D.sections.length} seções.</p></div>
+      <div class="tabs">
+        <button class="tab ${mapaTab === 'rotas' ? 'on' : ''}" data-act="mapaTab" data-tab="rotas">Rotas</button>
+        <button class="tab ${mapaTab === 'docs' ? 'on' : ''}" data-act="mapaTab" data-tab="docs">Documentação</button>
+      </div>
+    </div>
+    <div class="toolbar">
+      <input type="text" id="mapaSearch" placeholder="${mapaTab === 'rotas' ? 'Buscar rota, área ou nota' : 'Buscar título, caminho ou resumo'}" value="${esc(mapaQuery)}" style="max-width:340px">
+      ${mapaTab === 'docs' ? `<select id="mapaSec" style="max-width:300px">
+        <option value="todas">Todas as seções (${D.sections.length})</option>
+        ${D.sections.map((s) => `<option value="${esc(s.name)}" ${mapaSec === s.name ? 'selected' : ''}>${esc(s.name)} · ${s.pages.length}</option>`).join('')}
+      </select>` : `<div class="chips">
+        <span class="chip tag">${totalRotas} rotas</span>
+        <span class="chip tag">${R.dominios.length} domínios</span>
+      </div>`}
+    </div>
+    ${mapaTab === 'rotas' ? `
+      <div class="dom-list">${R.dominios.map((d) => `<div class="dom"><b>${esc(d.d)}</b><span>${esc(d.f)}</span></div>`).join('')}</div>
+      ${grupos.length ? grupos.map((g) => `
+        <div class="grp">
+          <h3>${esc(g.nome)} <em>${g.itens.length}</em></h3>
+          <div class="table-wrap"><table>
+            <thead><tr><th style="width:38%">Rota</th><th style="width:16%">Área</th><th style="width:12%">Estado</th><th>O que tem</th></tr></thead>
+            <tbody>${g.itens.map((r) => `<tr>
+              <td><code>${esc(r.p)}</code></td>
+              <td>${esc(r.area)}</td>
+              <td><span class="st ${ESTADO_CLS[r.estado] || 'obs'}">${esc(r.estado)}</span></td>
+              <td class="muted">${esc(r.nota)}</td>
+            </tr>`).join('')}</tbody>
+          </table></div>
+        </div>`).join('') : `<div class="empty"><strong>Nenhuma rota encontrada</strong><p>Tente outro termo.</p></div>`}`
+    : `
+      <div class="doc-list">
+        ${docsShown.map((p) => `<button class="doc" data-act="openDoc" data-url="${esc(p.u)}">
+          <span class="doc-sec">${esc(p.sec)}</span>
+          <b>${esc(p.t)}</b>
+          <code>${esc(p.p)}</code>
+          ${p.d ? `<p>${esc(p.d)}</p>` : ''}
+        </button>`).join('') || `<div class="empty"><strong>Nada encontrado</strong><p>Tente outro termo ou outra seção.</p></div>`}
+      </div>
+      ${docs.length > docsShown.length ? `<div class="more-row"><button class="btn" data-act="mapaMore">Mostrar mais ${Math.min(48, docs.length - docsShown.length)} de ${docs.length - docsShown.length}</button></div>` : ''}
+    `}
+  </div>`;
+
+  const inp = $('#mapaSearch');
+  if (inp) inp.addEventListener('input', (e) => {
+    mapaQuery = e.target.value; mapaLimit = 48;
+    const pos = e.target.selectionStart;
+    views.mapa();
+    setTimeout(() => { const i = $('#mapaSearch'); if (i) { i.focus(); i.setSelectionRange(pos, pos); } }, 0);
+  });
+  const sel = $('#mapaSec');
+  if (sel) sel.addEventListener('change', (e) => { mapaSec = e.target.value; mapaLimit = 48; views.mapa(); });
 };
 
 /* ============ eventos globais ============ */

@@ -31,6 +31,8 @@ string copiada do produto original.
   mercado), busca, filtro por camada, leitura de risco e liga/desliga por item
 - Streaming: laboratório que reproduz a sequência de quadros entre envio e resposta
   (`message.start` → `thinking` → `step.start` → `step.end` → `delta` → `message.end`)
+- Mapa: 37 rotas mapeadas em cinco grupos, mais as 971 páginas da documentação pública em 61
+  seções, com busca, filtro por seção e abertura do documento original
 - Consumo de créditos, banner de créditos esgotados e simulação de upgrade
 - Nova conversa e troca entre conversas, com histórico por conversa
 - Workflows: criar, ativar, pausar, excluir e executar, com histórico de execuções
@@ -51,6 +53,8 @@ string copiada do produto original.
 - `docs/mapa.html`: mapa navegável de rotas e capacidades
 - `docs/ferramentas.md`: inventário de ferramentas por família
 - `docs/skills-marketplace.md`: anatomia de skill e distribuição
+- `assets/dados.js`: rotas e índice de documentação, gerados de `data/*.json`
+- `data/rotas.json` e `data/docs.json`: os mesmos dados em JSON, para reuso
 
 ## Rodar local
 
@@ -71,6 +75,8 @@ python3 -m http.server 8000
 | [`docs/workflows-e-dados.md`](docs/workflows-e-dados.md) | Gatilhos, atividades, entidades e RLS |
 | [`docs/ferramentas.md`](docs/ferramentas.md) | Inventário completo das ferramentas por família, com efeito de cada uma |
 | [`docs/skills-marketplace.md`](docs/skills-marketplace.md) | Anatomia de uma skill, mercado, distribuição por GitHub e catálogo sugerido |
+| [`docs/estrutura-publica.md`](docs/estrutura-publica.md) | Domínios, páginas públicas, índice da documentação e o que não é extraível |
+| [`docs/design-tokens.md`](docs/design-tokens.md) | Tokens medidos no site público, tipografia, movimento e o mapa entre os dois sistemas |
 | [`docs/roadmap.md`](docs/roadmap.md) | Propostas de melhoria (o "pra melhorar" do pedido) |
 
 ## Site

@@ -1,0 +1,228 @@
+{
+ "dominios": [
+  {
+   "d": "base44.com",
+   "f": "site institucional: produto, preços, templates, blog, comunidade"
+  },
+  {
+   "d": "app.base44.com",
+   "f": "aplicação web: apps, agentes, conectores, conta"
+  },
+  {
+   "d": "docs.base44.com",
+   "f": "documentação (Docusaurus, publica /llms.txt)"
+  }
+ ],
+ "publicas": [
+  {
+   "p": "/",
+   "area": "Institucional",
+   "estado": "documentada",
+   "nota": "home do produto, proposta e CTA de criação"
+  },
+  {
+   "p": "/pricing",
+   "area": "Institucional",
+   "estado": "documentada",
+   "nota": "planos, créditos e limites"
+  },
+  {
+   "p": "/templates",
+   "area": "Comunidade",
+   "estado": "documentada",
+   "nota": "templates públicos da comunidade"
+  },
+  {
+   "p": "/blog",
+   "area": "Conteúdo",
+   "estado": "documentada",
+   "nota": "artigos e novidades"
+  },
+  {
+   "p": "/login",
+   "area": "Autenticação",
+   "estado": "verificada",
+   "nota": "Google, Apple, GitHub ou e-mail; Turnstile; 2FA por notificação"
+  },
+  {
+   "p": "/signup",
+   "area": "Autenticação",
+   "estado": "documentada",
+   "nota": "criação de conta, com créditos de convite"
+  },
+  {
+   "p": "/superagent/{agent_id}",
+   "area": "Agente público",
+   "estado": "verificada",
+   "nota": "chat compartilhado; gate por workspace devolve 'Couldn't load the app'"
+  },
+  {
+   "p": "/template/{slug}",
+   "area": "Comunidade",
+   "estado": "observada",
+   "nota": "link de template público gerado em Agent Settings"
+  },
+  {
+   "p": "/docs",
+   "area": "Documentação",
+   "estado": "documentada",
+   "nota": "971 páginas em 61 seções"
+  }
+ ],
+ "app": [
+  {
+   "p": "/",
+   "area": "Workspace",
+   "estado": "verificada",
+   "nota": "home: saudação, seletor de modo, apps recentes"
+  },
+  {
+   "p": "/apps",
+   "area": "Workspace",
+   "estado": "verificada",
+   "nota": "lista de apps, pastas, filtros por dono e status"
+  },
+  {
+   "p": "/base-code",
+   "area": "Workspace",
+   "estado": "observada",
+   "nota": "edição de código existente por PR"
+  },
+  {
+   "p": "/app-templates",
+   "area": "Workspace",
+   "estado": "verificada",
+   "nota": "templates internos e da comunidade"
+  },
+  {
+   "p": "/connectors",
+   "area": "Workspace",
+   "estado": "verificada",
+   "nota": "contas conectadas por provedor, Add connector"
+  },
+  {
+   "p": "/community",
+   "area": "Workspace",
+   "estado": "observada",
+   "nota": "área de comunidade"
+  },
+  {
+   "p": "/basecamp",
+   "area": "Workspace",
+   "estado": "observada",
+   "nota": "área de aprendizado"
+  },
+  {
+   "p": "/launchpad",
+   "area": "Workspace",
+   "estado": "observada",
+   "nota": "área de lançamento"
+  },
+  {
+   "p": "/partners",
+   "area": "Workspace",
+   "estado": "observada",
+   "nota": "parceiros para contratar"
+  },
+  {
+   "p": "/messages",
+   "area": "Workspace",
+   "estado": "observada",
+   "nota": "mensagens internas"
+  }
+ ],
+ "agente": [
+  {
+   "p": "/superagent/{id}",
+   "area": "Agente",
+   "estado": "verificada",
+   "nota": "chat do agente, compositor, sugestões e slash commands"
+  },
+  {
+   "p": "/superagent/{id}/tasks",
+   "area": "Agente",
+   "estado": "verificada",
+   "nota": "Workflows: agendados, gatilhos e atividade"
+  },
+  {
+   "p": "/superagent/{id}/integrations",
+   "area": "Agente",
+   "estado": "verificada",
+   "nota": "Plugins: abas Connectors e Skills"
+  },
+  {
+   "p": "/superagent/{id}/settings",
+   "area": "Agente",
+   "estado": "verificada",
+   "nota": "Agent Settings em modal com abas"
+  },
+  {
+   "p": "/superagent/{id}/settings?panel=channels",
+   "area": "Agente",
+   "estado": "verificada",
+   "nota": "Channels como painel de settings, não rota própria"
+  },
+  {
+   "p": "/superagent/{id}/notes",
+   "area": "Agente",
+   "estado": "verificada",
+   "nota": "Notes: conhecimento compartilhado"
+  },
+  {
+   "p": "/superagent/{id}/library",
+   "area": "Agente",
+   "estado": "verificada",
+   "nota": "Files: árvore com .agents, base44, conversations"
+  },
+  {
+   "p": "/superagent/{id}/memory",
+   "area": "Agente",
+   "estado": "verificada",
+   "nota": "Memory: fatos duráveis do agente"
+  },
+  {
+   "p": "/superagent/{id}/data",
+   "area": "Agente",
+   "estado": "verificada",
+   "nota": "Data: entidades e registros"
+  }
+ ],
+ "ajustes": [
+  {
+   "p": "General",
+   "area": "Agent Settings",
+   "estado": "verificada",
+   "nota": "modelos de chat e automação, acesso entre apps, voz Kore, template público, excluir agente"
+  },
+  {
+   "p": "Trusted people",
+   "area": "Agent Settings",
+   "estado": "verificada",
+   "nota": "pessoas que podem acionar o agente"
+  },
+  {
+   "p": "Credit usage",
+   "area": "Agent Settings",
+   "estado": "verificada",
+   "nota": "consumo por dia e por origem"
+  },
+  {
+   "p": "Meetings",
+   "area": "Agent Settings",
+   "estado": "verificada",
+   "nota": "reuniões agendadas pelo agente"
+  },
+  {
+   "p": "Security",
+   "area": "Agent Settings",
+   "estado": "verificada",
+   "nota": "auto-aprovação e guardas de ferramenta"
+  },
+  {
+   "p": "Developer",
+   "area": "Agent Settings",
+   "estado": "verificada",
+   "nota": "chave de API, endpoints e logs"
+  }
+ ]
+}
