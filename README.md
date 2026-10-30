@@ -27,6 +27,8 @@ string copiada do produto original.
 ## O que funciona de verdade
 
 - Chat com envio, indicador de pensamento, passos de ferramenta e texto em streaming
+- Ações por mensagem: copiar, editar e reenviar, gerar de novo, com anexos em pílula
+- Busca rápida em `⌘K` / `Ctrl+K`: telas, conversas, comandos e habilidades numa lista só
 - Habilidades: catálogo com 68 capacidades (skills, famílias de ferramentas, conectores, canais e
   mercado), busca, filtro por camada, leitura de risco e liga/desliga por item
 - Streaming: laboratório que reproduz a sequência de quadros entre envio e resposta
@@ -72,6 +74,7 @@ python3 -m http.server 8000
 | [`docs/rotas.md`](docs/rotas.md) | Rotas verificadas + mapa das áreas internas do produto |
 | [`docs/habilidades.md`](docs/habilidades.md) | Inventário completo de skills, ferramentas, connectors e canais |
 | [`docs/chat-e-streaming.md`](docs/chat-e-streaming.md) | Anatomia do chat do agente e do streaming de resposta |
+| [`docs/chat-medidas.md`](docs/chat-medidas.md) | Medidas, estados e interações do chat: grade, escala, ações, busca rápida |
 | [`docs/workflows-e-dados.md`](docs/workflows-e-dados.md) | Gatilhos, atividades, entidades e RLS |
 | [`docs/ferramentas.md`](docs/ferramentas.md) | Inventário completo das ferramentas por família, com efeito de cada uma |
 | [`docs/skills-marketplace.md`](docs/skills-marketplace.md) | Anatomia de uma skill, mercado, distribuição por GitHub e catálogo sugerido |

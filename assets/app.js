@@ -226,6 +226,16 @@ function renderChrome() {
 
 /* ============ roteador ============ */
 const views = {};
+let pendingAttach = [];
+
+function renderAttachTray() {
+  const tray = $('#attachTray');
+  if (!tray) return;
+  tray.innerHTML = pendingAttach.length
+    ? pendingAttach.map((n) => `<span class="file-pill">${esc(n)}<button type="button" class="x" data-act="dropAttach" data-name="${esc(n)}" aria-label="Remover ${esc(n)}">×</button></span>`).join('')
+    : '';
+  tray.className = pendingAttach.length ? 'attach-tray on' : 'attach-tray';
+}
 const TITLES = {
   chat: ['Superagente', 'Pronto para ajudar'],
   tasks: ['Workflows', 'Agendamentos, gatilhos e execuções'],
@@ -297,6 +307,7 @@ views.chat = function () {
         <div id="creditsBanner"></div>
         <div id="slashPalette"></div>
         <form class="composer" id="composer">
+          <div id="attachTray"></div>
           <textarea id="input" rows="1" placeholder="Pergunte qualquer coisa, ou digite / para mais opções" aria-label="Mensagem para o agente"></textarea>
           <div class="composer-bar">
             <button type="button" class="icon-round" data-act="attach" title="Anexar arquivo" aria-label="Anexar arquivo">
@@ -356,6 +367,7 @@ views.chat = function () {
   });
 
   renderMessages(true);
+  renderAttachTray();
   renderBanner();
   if (msgs.length) requestAnimationFrame(() => { const s = $('#chatScroll'); s.scrollTop = s.scrollHeight; });
 };
@@ -386,12 +398,26 @@ function renderBanner() {
   if (send) send.disabled = true;
 }
 
-function messageHTML(m) {
+function messageHTML(m, i) {
   const isUser = m.role === 'user';
   const steps = (m.steps || []).map((s) => `
     <div class="step ${s.status === 'running' ? 'running' : 'ok'}">
       <i class="dot"></i><span>${esc(s.name)}</span>${s.output ? `<span style="opacity:.7">· ${esc(s.output)}</span>` : ''}
     </div>`).join('');
+  const files = (m.files || []).length ? `<div class="msg-files">${m.files.map((f) => `
+      <span class="file-pill"><svg viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/></svg>${esc(f)}</span>`).join('')}</div>` : '';
+  const acts = `<div class="msg-acts">
+      <button class="icon-btn" data-act="copyMsg" data-i="${i}" title="Copiar texto" aria-label="Copiar texto">
+        <svg viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/></svg>
+      </button>
+      ${isUser
+        ? `<button class="icon-btn" data-act="editMsg" data-i="${i}" title="Editar e reenviar" aria-label="Editar e reenviar">
+            <svg viewBox="0 0 24 24"><path d="M4 20h4l10-10-4-4L4 16z"/></svg>
+          </button>`
+        : `<button class="icon-btn" data-act="retryMsg" data-i="${i}" title="Gerar de novo" aria-label="Gerar de novo">
+            <svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.3-5.7M20 4v5h-5"/></svg>
+          </button>`}
+    </div>`;
   return `<article class="msg ${isUser ? 'user' : 'agent'}">
       <div class="msg-head">
         <span class="who-badge">${isUser ? esc(state.user.initials) : 'S'}</span>
@@ -400,6 +426,8 @@ function messageHTML(m) {
       </div>
       ${steps ? `<div class="steps">${steps}</div>` : ''}
       <div class="msg-body">${esc(m.text)}${m.cursor ? '<i class="caret"></i>' : ''}</div>
+      ${files}
+      ${m.cursor ? '' : acts}
     </article>`;
 }
 
@@ -410,7 +438,7 @@ function renderMessages(force) {
   if (!conv || !conv.messages.length) { box.innerHTML = chatEmptyHTML(); return; }
   const scroll = $('#chatScroll');
   const nearBottom = !scroll || scroll.scrollHeight - scroll.scrollTop - scroll.clientHeight < 140;
-  box.innerHTML = conv.messages.map(messageHTML).join('') + (streaming && !streamingHasText() ? thinkingHTML() : '');
+  box.innerHTML = conv.messages.map((m, i) => messageHTML(m, i)).join('') + (streaming && !streamingHasText() ? thinkingHTML() : '');
   if (nearBottom || force) scrollToBottom();
 }
 function streamingHasText() {
@@ -467,7 +495,9 @@ async function sendMessage(text) {
     return;
   }
   const conv = activeConv();
-  conv.messages.push({ id: uid('m'), role: 'user', ts: Date.now(), text });
+  conv.messages.push({ id: uid('m'), role: 'user', ts: Date.now(), text, files: pendingAttach.slice() });
+  pendingAttach = [];
+  renderAttachTray();
   if (conv.title === 'Nova conversa') conv.title = text.slice(0, 46);
   conv.updated = Date.now();
   state.agent.credits.used = Math.min(state.agent.credits.total, state.agent.credits.used + 1);
@@ -1014,17 +1044,54 @@ const actions = {
   /* conversas */
   openConv(el) { state.activeConversation = el.dataset.id; save(); go('chat'); },
   suggest(el) { const t = $('#input'); if (t) { t.value = el.dataset.text; t.focus(); } },
+  copyMsg(el) {
+    const m = activeConv().messages[+el.dataset.i];
+    if (!m) return;
+    const done = () => toast('Texto copiado.');
+    if (navigator.clipboard) navigator.clipboard.writeText(m.text).then(done, () => toast('Não foi possível copiar aqui.'));
+    else toast('Copiar exige HTTPS.');
+  },
+  editMsg(el) {
+    const m = activeConv().messages[+el.dataset.i];
+    if (!m) return;
+    const inp = $('#input');
+    if (!inp) return;
+    inp.value = m.text;
+    inp.style.height = 'auto';
+    inp.style.height = Math.min(180, inp.scrollHeight) + 'px';
+    inp.focus();
+    inp.setSelectionRange(inp.value.length, inp.value.length);
+  },
+  retryMsg(el) {
+    if (streaming) return toast('Aguarde a resposta terminar.');
+    const i = +el.dataset.i;
+    const conv = activeConv();
+    const prev = conv.messages.slice(0, i).reverse().find((x) => x.role === 'user');
+    if (!prev) return toast('Sem mensagem anterior para repetir.');
+    if (creditsLeft() <= 0) return toast('Sem créditos para gerar de novo.');
+    conv.messages.splice(i, 1);
+    state.agent.credits.used = Math.min(state.agent.credits.total, state.agent.credits.used + 1);
+    save(); renderChrome(); renderMessages(true); renderBanner();
+    streamReply(conv, prev.text);
+  },
+  paletteRun(el) { runPalette(paletteFiltered()[+el.dataset.i]); },
+  paletteClose() { closePalette(); },
   attach() {
     const inp = document.createElement('input');
     inp.type = 'file';
+    inp.multiple = true;
     inp.onchange = () => {
-      const f = inp.files[0];
-      if (!f) return;
-      state.files.push({ id: uid('f'), path: 'conversations/anexos', name: f.name, size: (f.size / 1024).toFixed(1).replace('.', ',') + ' kB' });
-      save(); renderChrome();
-      toast('Anexo "' + f.name + '" enviado para Arquivos.');
+      [...inp.files].forEach((f) => {
+        pendingAttach.push(f.name);
+        state.files.push({ id: uid('f'), path: 'conversations/anexos', name: f.name, size: (f.size / 1024).toFixed(1).replace('.', ',') + ' kB' });
+      });
+      save(); renderChrome(); renderAttachTray();
     };
     inp.click();
+  },
+  dropAttach(el) {
+    pendingAttach = pendingAttach.filter((n) => n !== el.dataset.name);
+    renderAttachTray();
   },
   mic() {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -1782,8 +1849,107 @@ views.mapa = function () {
   if (sel) sel.addEventListener('change', (e) => { mapaSec = e.target.value; mapaLimit = 48; views.mapa(); });
 };
 
+/* ============ paleta de comandos ============ */
+let paletteIdx = 0;
+let paletteQuery = '';
+
+function paletteItems() {
+  const navs = [
+    ['Nova conversa', 'chat', 'Ir'],
+    ['Habilidades', 'skills', 'Ir'],
+    ['Mapa de rotas', 'mapa', 'Ir'],
+    ['Workflows', 'tasks', 'Ir'],
+    ['Plugins', 'integrations', 'Ir'],
+    ['Canais', 'channels', 'Ir'],
+    ['Notas', 'notes', 'Ir'],
+    ['Arquivos', 'library', 'Ir'],
+    ['Memória', 'memory', 'Ir'],
+    ['Dados', 'data', 'Ir'],
+    ['Streaming', 'stream', 'Ir'],
+    ['Configurações do agente', 'settings', 'Ir'],
+  ].map(([n, v, g]) => ({ n, g, view: v }));
+
+  const convs = state.conversations.map((c) => ({ n: c.title, g: 'Conversa', conv: c.id }));
+  const skills = (window.CATALOG_IDS ? [] : CATALOG).slice(0, 200).map((s) => ({ n: s.n, g: 'Habilidade', skill: s.id }));
+  const cmds = [
+    { n: '/goal — tarefa longa com etapas', g: 'Comando', text: '/goal ' },
+    { n: '/workflow — criar automação', g: 'Comando', text: '/workflow ' },
+    { n: '/note — salvar nota', g: 'Comando', text: '/note ' },
+    { n: '/memory — guardar fato', g: 'Comando', text: '/memory ' },
+  ];
+  return [...navs, ...convs, ...cmds, ...skills];
+}
+
+function paletteFiltered() {
+  const q = paletteQuery.trim().toLowerCase();
+  const all = paletteItems();
+  if (!q) return all.slice(0, 40);
+  return all.filter((i) => (i.n + ' ' + i.g).toLowerCase().includes(q)).slice(0, 40);
+}
+
+function renderPalette() {
+  const list = $('#paletteList');
+  if (!list) return;
+  const items = paletteFiltered();
+  if (paletteIdx >= items.length) paletteIdx = Math.max(0, items.length - 1);
+  list.innerHTML = items.length
+    ? items.map((i, idx) => `<button class="pal-item ${idx === paletteIdx ? 'on' : ''}" data-act="paletteRun" data-i="${idx}">
+        <span class="pal-name">${esc(i.n)}</span><span class="pal-group">${esc(i.g)}</span>
+      </button>`).join('')
+    : '<p class="pal-empty">Nada encontrado.</p>';
+}
+
+function openPalette() {
+  closePalette();
+  paletteIdx = 0;
+  paletteQuery = '';
+  const wrap = document.createElement('div');
+  wrap.className = 'palette-wrap';
+  wrap.id = 'paletteWrap';
+  wrap.innerHTML = `<div class="palette" role="dialog" aria-label="Busca rápida">
+      <input id="paletteInput" type="text" placeholder="Buscar tela, conversa, comando ou habilidade" aria-label="Buscar">
+      <div class="palette-list" id="paletteList"></div>
+      <div class="palette-foot"><span>↑ ↓ navegar</span><span>Enter abrir</span><span>Esc fechar</span></div>
+    </div>`;
+  document.body.appendChild(wrap);
+  const inp = $('#paletteInput');
+  inp.addEventListener('input', (e) => { paletteQuery = e.target.value; paletteIdx = 0; renderPalette(); });
+  inp.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowDown') { e.preventDefault(); paletteIdx += 1; renderPalette(); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); paletteIdx = Math.max(0, paletteIdx - 1); renderPalette(); }
+    else if (e.key === 'Enter') { e.preventDefault(); runPalette(paletteFiltered()[paletteIdx]); }
+    else if (e.key === 'Escape') { e.preventDefault(); closePalette(); }
+  });
+  renderPalette();
+  inp.focus();
+}
+
+function closePalette() {
+  const w = $('#paletteWrap');
+  if (w) w.remove();
+}
+
+function runPalette(item) {
+  if (!item) return;
+  closePalette();
+  if (item.view) { go(item.view); return; }
+  if (item.conv) { openConversation(item.conv); return; }
+  if (item.text) {
+    go('chat');
+    const inp = $('#input');
+    if (inp) { inp.value = item.text; inp.focus(); }
+    return;
+  }
+  if (item.skill) {
+    skillQuery = item.n;
+    skillCat = 'todas';
+    go('skills');
+  }
+}
+
 /* ============ eventos globais ============ */
 document.addEventListener('click', (e) => {
+  if (e.target.id === 'paletteWrap') { closePalette(); return; }
   const closer = e.target.closest('[data-close]');
   if (closer) { closeModal(); return; }
   const actEl = e.target.closest('[data-act]');
@@ -1813,7 +1979,15 @@ document.addEventListener('click', (e) => {
 });
 
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape' && !$('#modalRoot').hidden) closeModal();
+  if ((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')) {
+    e.preventDefault();
+    openPalette();
+    return;
+  }
+  if (e.key === 'Escape') {
+    if ($('#paletteWrap')) { closePalette(); return; }
+    if (!$('#modalRoot').hidden) closeModal();
+  }
 });
 
 function syncMore() {
