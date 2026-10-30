@@ -187,13 +187,14 @@ function renderChrome() {
   $('#countFiles').textContent = state.files.length;
   $('#countMemory').textContent = state.memories.length;
   $('#countData').textContent = state.entities.reduce((a, e) => a + e.records.length, 0);
+  const cc = $('#countConvs');
+  if (cc) cc.textContent = state.conversations.length;
 
   const pill = $('#creditPill');
   pill.textContent = left === 0 ? 'sem créditos' : left + (left === 1 ? ' crédito' : ' créditos');
   pill.className = 'pill' + (left === 0 ? ' out' : left <= 5 ? ' low' : '');
 
-  $('#planLine').textContent = state.agent.credits.used + ' de ' + state.agent.credits.total + ' usados';
-  $('#planBar').style.width = Math.min(100, (state.agent.credits.used / state.agent.credits.total) * 100) + '%';
+  $('#planLine').textContent = state.agent.credits.used + ' de ' + state.agent.credits.total + ' créditos usados';
 
   const st = computeSetup();
   $('#setupProgressText').textContent = st.done + ' de ' + st.total + ' concluídos';
@@ -203,8 +204,9 @@ function renderChrome() {
   const list = state.conversations
     .slice()
     .sort((a, b) => b.updated - a.updated)
-    .map((c) => `<button class="conv ${c.id === state.activeConversation ? 'on' : ''}" data-act="openConv" data-id="${c.id}" role="listitem">
-        <b>${esc(c.title)}</b><span>${brl.format(c.updated)}</span>
+    .map((c) => `<button class="conv ${c.id === state.activeConversation ? 'on' : ''}" data-act="openConv" data-id="${c.id}" role="listitem" title="${esc(c.title)}">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16v10H8l-4 4z"/></svg>
+        <b>${esc(c.title)}</b>
       </button>`)
     .join('');
   $('#conversations').innerHTML = list || '<p class="empty-mini">Nenhuma conversa ainda.</p>';
@@ -248,13 +250,26 @@ function render() {
 
 /* ============ view: chat ============ */
 function chatEmptyHTML() {
+  const first = (state.user.name || '').split(' ')[0] || 'por aqui';
   return `<div class="chat-empty">
-    <h2>Como posso ajudar hoje?</h2>
-    <p>Pergunte sobre o seu workspace, peça um resumo do dia ou peça para eu executar um workflow.</p>
+    <div class="big-mark" aria-hidden="true">
+      <svg viewBox="0 0 24 24"><path d="M12 3v3m0 12v3M4.2 7.5l2.6 1.5m10.4 6 2.6 1.5M19.8 7.5l-2.6 1.5m-10.4 6-2.6 1.5"/><circle cx="12" cy="12" r="3.4"/></svg>
+    </div>
+    <h2>Olá, ${esc(first)}.</h2>
+    <p>O que posso fazer por você hoje?</p>
     <div class="suggestions">
-      <button class="suggestion" data-act="suggest" data-text="Resume o que está pendente para hoje.">Resume as pendências de hoje</button>
-      <button class="suggestion" data-act="suggest" data-text="Quais conectores estão ativos e com qual escopo?">Quais conectores estão ativos?</button>
-      <button class="suggestion" data-act="suggest" data-text="Cria uma nota com o plano da semana.">Cria uma nota com o plano da semana</button>
+      <button class="suggestion" data-act="suggest" data-text="Resume as pendências de hoje.">
+        <svg viewBox="0 0 24 24"><path d="M13 2 4.5 13.5H11l-1 8.5 8.5-11.5H12z"/></svg>
+        <span><b>Resume as pendências de hoje</b><small>Notas, memória e execuções recentes</small></span>
+      </button>
+      <button class="suggestion" data-act="suggest" data-text="Quais conectores estão ativos e com qual escopo?">
+        <svg viewBox="0 0 24 24"><path d="M10 3.5a2 2 0 0 1 4 0V5h2.5A1.5 1.5 0 0 1 18 6.5V9h1.5a2 2 0 0 1 0 4H18v2.5a1.5 1.5 0 0 1-1.5 1.5H14v1.5a2 2 0 0 1-4 0V17H7.5A1.5 1.5 0 0 1 6 15.5V13H4.5a2 2 0 0 1 0-4H6V6.5A1.5 1.5 0 0 1 7.5 5H10z"/></svg>
+        <span><b>Quais conectores estão ativos?</b><small>Plugins, escopo e status</small></span>
+      </button>
+      <button class="suggestion" data-act="goalHint">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></svg>
+        <span><b>Use /goal para tarefas longas</b><small>Plano com etapas que sobrevive entre dias</small></span>
+      </button>
     </div>
   </div>`;
 }
@@ -271,8 +286,9 @@ views.chat = function () {
       </div>
       <div class="composer-wrap">
         <div id="creditsBanner"></div>
+        <div id="slashPalette"></div>
         <form class="composer" id="composer">
-          <textarea id="input" rows="1" placeholder="Escreva uma mensagem..." aria-label="Mensagem para o agente"></textarea>
+          <textarea id="input" rows="1" placeholder="Pergunte qualquer coisa, ou digite / para mais opções" aria-label="Mensagem para o agente"></textarea>
           <div class="composer-bar">
             <button type="button" class="icon-round" data-act="attach" title="Anexar arquivo" aria-label="Anexar arquivo">
               <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
@@ -289,13 +305,13 @@ views.chat = function () {
             <button type="button" class="icon-round" data-act="voice" title="Modo voz" aria-label="Modo voz">
               <svg viewBox="0 0 24 24"><path d="M4 12h2M8 8v8M12 5v14M16 8v8M20 12h-2"/></svg>
             </button>
-            <button type="submit" class="send" id="sendBtn">
+            <button type="submit" class="send" id="sendBtn" aria-label="Enviar mensagem">
               <span id="sendLabel">Enviar</span>
-              <svg viewBox="0 0 24 24"><path d="M5 12h13M12 5l7 7-7 7"/></svg>
+              <svg viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
             </button>
           </div>
         </form>
-        <p class="hint">Enter envia · Shift + Enter quebra a linha · interface local de demonstração</p>
+        <p class="hint">Enter envia · Shift + Enter quebra a linha · demonstração local, sem dados reais</p>
       </div>
     </div>`;
 
@@ -321,6 +337,7 @@ views.chat = function () {
   input.addEventListener('input', () => {
     input.style.height = 'auto';
     input.style.height = Math.min(180, input.scrollHeight) + 'px';
+    updateSlash(input.value);
   });
   input.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -338,14 +355,26 @@ function renderBanner() {
   const box = $('#creditsBanner');
   if (!box) return;
   const left = creditsLeft();
-  if (left > 0) { box.innerHTML = ''; return; }
-  box.innerHTML = `<div class="credits-banner">
-      <div>
-        <strong>Você está sem créditos</strong>
-        <span>O plano renova em 3 dias. Faça upgrade para liberar créditos agora.</span>
+  const input = $('#input');
+  const send = $('#sendBtn');
+  if (left > 0) {
+    box.innerHTML = '';
+    if (input) { input.disabled = false; input.placeholder = 'Pergunte qualquer coisa, ou digite / para mais opções'; }
+    if (send) send.disabled = streaming;
+    return;
+  }
+  box.innerHTML = `<div class="credits-banner" role="status">
+      <div class="row-top"><span>0 créditos restantes</span><span>renova em 3 dias</span></div>
+      <div class="body">
+        <div>
+          <strong>Seus créditos do mês acabaram</strong>
+          <p>Assine o plano Premium e libere créditos na hora, além de mais contexto por conversa.</p>
+        </div>
+        <button class="btn orange" data-act="upgrade">Ver planos</button>
       </div>
-      <button class="btn primary tiny" data-act="upgrade">Ver planos</button>
     </div>`;
+  if (input) { input.disabled = true; input.placeholder = 'Sem créditos para continuar'; }
+  if (send) send.disabled = true;
 }
 
 function messageHTML(m) {
@@ -381,7 +410,9 @@ function streamingHasText() {
   return !!(last && last.role === 'agent' && last.text);
 }
 function thinkingHTML() {
-  return `<div class="thinking"><i class="spin"></i> Pensando...</div>`;
+  return `<div class="thinking" aria-live="polite" aria-label="Pensando"><span>
+    <svg viewBox="0 0 24 24"><path d="M12 3v3m0 12v3M4.2 7.5l2.6 1.5m10.4 6 2.6 1.5M19.8 7.5l-2.6 1.5m-10.4 6-2.6 1.5"/><circle cx="12" cy="12" r="3.4"/></svg>
+  </span></div>`;
 }
 function scrollToBottom() {
   const s = $('#chatScroll');
@@ -393,6 +424,7 @@ function setSendState() {
   const label = $('#sendLabel');
   if (!btn) return;
   btn.classList.toggle('stop', streaming);
+  btn.disabled = creditsLeft() <= 0 && !streaming;
   label.textContent = streaming ? 'Parar' : 'Enviar';
 }
 
@@ -483,6 +515,26 @@ function finishStream(conv, msg, forced) {
   renderChrome();
 }
 
+/* ============ paleta de comandos (/) ============ */
+const COMMANDS = [
+  { cmd: '/goal', desc: 'Criar um objetivo de longo prazo com etapas', text: '/goal ' },
+  { cmd: '/nota', desc: 'Salvar uma nota com o que vier depois', text: 'Cria uma nota com ' },
+  { cmd: '/workflow', desc: 'Agendar uma rotina recorrente', text: 'Cria um workflow que ' },
+  { cmd: '/canal', desc: 'Falar com alguém por um canal conectado', text: 'Envia uma mensagem para ' },
+];
+function updateSlash(value) {
+  const box = $('#slashPalette');
+  if (!box) return;
+  if (!value.startsWith('/')) { box.innerHTML = ''; return; }
+  const q = value.slice(1).toLowerCase();
+  const items = COMMANDS.filter((c) => c.cmd.slice(1).startsWith(q));
+  if (!items.length) { box.innerHTML = ''; return; }
+  box.innerHTML = `<div class="slash-list">${items.map((c) => `
+      <button class="slash-item" data-act="pickCommand" data-text="${esc(c.text)}">
+        <span class="mono">${esc(c.cmd)}</span><span>${esc(c.desc)}</span>
+      </button>`).join('')}</div>`;
+}
+
 /* ============ view: workflows ============ */
 views.tasks = function () {
   const rows = state.workflows.map((w) => `
@@ -521,37 +573,69 @@ views.tasks = function () {
 /* ============ view: plugins ============ */
 let pluginsTab = 'connectors';
 views.integrations = function () {
-  const conn = state.connectors.map((c) => `
-    <div class="row">
-      <div class="stack"><b>${esc(c.name)}</b><span>${esc(c.desc)}${c.status === 'active' ? ' · ' + esc(c.scope) : ''}</span></div>
-      <div class="side">
-        <span class="badge ${c.status === 'active' ? 'ok' : 'off'}">${c.status === 'active' ? 'ativo' : 'disponível'}</span>
+  const active = state.connectors.filter((c) => c.status === 'active');
+  const available = state.connectors.filter((c) => c.status !== 'active');
+  const popular = available.slice(0, 4);
+
+  const card = (c) => `
+    <div class="connector">
+      <div class="connector-top">
+        <span class="mark">${esc(c.name.slice(0, 2).toUpperCase())}</span>
+        <b>${esc(c.name)}</b>
+        ${c.status === 'active' ? '<span class="badge ok">ativo</span>' : ''}
+      </div>
+      <p>${esc(c.desc)}${c.status === 'active' && c.scope ? ' · ' + esc(c.scope) : ''}</p>
+      <div class="foot">
+        <span class="help">${c.status === 'active' ? 'conectado' : 'disponível'}</span>
         ${c.status === 'active'
           ? `<button class="btn tiny" data-act="disconnect" data-id="${c.id}">Desconectar</button>`
-          : `<button class="btn tiny primary" data-act="connect" data-id="${c.id}">Conectar</button>`}
+          : `<button class="btn tiny" data-act="connect" data-id="${c.id}">Conectar</button>`}
       </div>
-    </div>`).join('');
+    </div>`;
 
   const skills = state.skills.map((s) => `
     <div class="row">
+      <div class="mark">${esc(s.name.slice(0, 2).toUpperCase())}</div>
       <div class="stack"><b>${esc(s.name)}</b><span>${esc(s.desc)}</span></div>
       <div class="side"><button class="toggle ${s.on ? 'on' : ''}" data-act="toggleSkill" data-id="${s.id}" aria-label="Ativar ${esc(s.name)}"><i></i></button></div>
     </div>`).join('');
 
+  const connectorsBody = `
+    <div class="promo">
+      <div class="promo-copy">
+        <strong>Conecte o agente ao e-mail, ao calendário e ao que mais usar</strong>
+        <p>Ele resume threads não lidas, cruza a agenda e responde na hora em que você pedir.</p>
+      </div>
+      <div class="promo-art" aria-hidden="true">
+        <span class="hub"><svg viewBox="0 0 24 24"><path d="M12 3v3m0 12v3M4.2 7.5l2.6 1.5m10.4 6 2.6 1.5M19.8 7.5l-2.6 1.5m-10.4 6-2.6 1.5"/><circle cx="12" cy="12" r="3.4"/></svg></span>
+        <span class="node">Gmail</span>
+        <span class="node">Agenda</span>
+      </div>
+    </div>
+    ${popular.length ? `<div class="section-title"><h3>Mais populares</h3><button class="link" data-act="showAllConnectors">Ver todos</button></div>
+    <div class="grid connectors">${popular.map(card).join('')}</div>` : ''}
+    ${available.length > 4 ? `<div class="section-title" style="margin-top:22px"><h3>Todos os conectores</h3></div>
+    <div class="grid connectors">${available.slice(4).map(card).join('')}</div>` : ''}
+    <div class="section-title" style="margin-top:26px">
+      <h3>Apps conectados</h3><span class="badge count">${active.length}</span>
+    </div>
+    ${active.length ? `<div class="grid connectors">${active.map(card).join('')}</div>`
+      : `<div class="empty"><strong>Nenhum app conectado</strong><p>Conecte um serviço para eu poder agir nele.</p></div>`}
+  `;
+
   $('#view').innerHTML = `<div class="view-inner">
       <div class="section-head">
-        <div><h2>Plugins</h2><p>${state.connectors.filter((c) => c.status === 'active').length} conectores ativos · ${state.skills.filter((s) => s.on).length} skills ligadas</p></div>
-        <button class="btn primary" data-act="addConnector">Adicionar conector</button>
+        <div>
+          <h2>Plugins</h2>
+          <p>Melhore a experiência do agente integrando os seus apps favoritos e conectores personalizados.</p>
+        </div>
+        <button class="btn dark" data-act="addConnector">+ Adicionar conector</button>
       </div>
       <div class="tabs">
         <button class="tab ${pluginsTab === 'connectors' ? 'on' : ''}" data-act="pluginsTab" data-tab="connectors">Conectores</button>
         <button class="tab ${pluginsTab === 'skills' ? 'on' : ''}" data-act="pluginsTab" data-tab="skills">Skills</button>
       </div>
-      <div class="list">${pluginsTab === 'connectors' ? conn : skills}</div>
-      <div class="card" style="margin-top:16px">
-        <h3>Como o agente usa isso</h3>
-        <p class="sub">Conectores dão acesso a serviços externos. Skills são rotinas próprias que o agente executa quando precisa. Ações que mudam algo fora daqui sempre pedem a sua confirmação.</p>
-      </div>
+      ${pluginsTab === 'connectors' ? connectorsBody : `<div class="list">${skills}</div>`}
     </div>`;
 };
 
@@ -777,8 +861,11 @@ views.settings = function () {
           </div>`).join('')}
         </div>
       </div>
-      <div class="card"><h3>Plano</h3><p class="sub">Mensal · ${total} créditos por ciclo. Ao esgotar, o chat pausa até a renovação ou upgrade.</p>
-      <button class="btn tiny primary" data-act="upgrade" style="margin-top:10px">Ver planos</button></div>`;
+      <div class="card"><h3>Plano</h3><p class="sub">Mensal · ${total} créditos por ciclo. Ao esgotar, o chat pausa até a renovação ou o upgrade.</p>
+      <div class="inline" style="margin-top:10px">
+        <button class="btn tiny primary" data-act="upgrade">Ver planos</button>
+        <button class="btn tiny" data-act="toggleCredits">${creditsLeft() > 0 ? 'Simular créditos esgotados' : 'Recarregar 5 créditos'}</button>
+      </div></div>`;
   }
 
   if (settingsTab === 'meetings') {
@@ -885,6 +972,46 @@ const actions = {
     });
   },
   voiceSay() { toast('"Claro, pode falar."'); },
+  pickCommand(el) {
+    const input = $('#input');
+    if (input) { input.value = el.dataset.text; input.focus(); }
+    const box = $('#slashPalette');
+    if (box) box.innerHTML = '';
+  },
+  goalHint() {
+    openModal({
+      title: 'Objetivos com /goal',
+      body: `<p class="sub">Use <span class="mono">/goal</span> quando a tarefa levar mais de uma conversa.</p>
+        <ol style="font-size:13px;color:var(--muted);padding-left:18px;margin-top:12px;line-height:1.7">
+          <li>O objetivo vira um plano com etapas e dependências.</li>
+          <li>Cada etapa roda em segundo plano, mesmo entre dias.</li>
+          <li>Você recebe o resultado ou uma pergunta quando algo trava.</li>
+        </ol>`,
+      foot: '<button class="btn primary" data-close="1">Entendi</button>',
+    });
+  },
+  showAllConnectors() {
+    const avail = state.connectors.filter((c) => c.status !== 'active');
+    openModal({
+      title: 'Todos os conectores',
+      body: `<div class="list">${avail.map((c) => `<div class="row">
+          <div class="mark">${esc(c.name.slice(0, 2).toUpperCase())}</div>
+          <div class="stack"><b>${esc(c.name)}</b><span>${esc(c.desc)}</span></div>
+          <button class="btn tiny" data-act="connect" data-id="${c.id}">Conectar</button>
+        </div>`).join('') || '<p class="sub">Todos os conectores já estão ativos.</p>'}</div>`,
+      foot: '<button class="btn" data-close="1">Fechar</button>',
+    });
+  },
+  toggleCredits() {
+    if (creditsLeft() > 0) {
+      state.agent.credits.used = state.agent.credits.total;
+      toast('Créditos zerados para demonstrar o bloqueio.');
+    } else {
+      state.agent.credits.used = Math.max(0, state.agent.credits.total - 5);
+      toast('5 créditos liberados.');
+    }
+    save(); render();
+  },
   upgrade() {
     openModal({
       title: 'Planos',
@@ -898,7 +1025,7 @@ const actions = {
   fakeUpgrade() {
     state.agent.credits.total = 100;
     state.agent.credits.used = Math.min(state.agent.credits.used, 100);
-    save(); closeModal(); render(); toast('Plano Premium simulado. 100 créditos no ciclo.');
+    save(); closeModal(); render(); toast('Plano Premium simulado: 100 créditos no ciclo.');
   },
   resetDemo() {
     openModal({
