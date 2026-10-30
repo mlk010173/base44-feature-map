@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Superagente · interface</title>
 <meta name="description" content="Interface funcional do Superagente: chat com streaming, workflows, plugins, canais, notas, arquivos, memória, dados e configurações.">
-<link rel="stylesheet" href="assets/styles.css?v=7">
+<link rel="stylesheet" href="assets/styles.css?v=8">
 </head>
 <body>
 <div class="app" id="app">
@@ -54,7 +54,12 @@
         <span>Configurações</span>
       </button>
 
-      <p class="nav-label">Mais</p>
+      <button class="nav-item" id="moreToggle" aria-expanded="false" aria-controls="moreGroup">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h10"/></svg>
+        <span>Mais</span>
+        <svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+      </button>
+      <div class="nav-group" id="moreGroup">
       <button class="nav-item sub" data-view="library">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h6l2 2h10v10H3z"/></svg>
         <span>Arquivos</span>
@@ -70,6 +75,7 @@
         <span>Dados</span>
         <em class="count" id="countData">0</em>
       </button>
+      </div>
     </nav>
 
     <p class="nav-label conversations-label">Conversas</p>
@@ -148,6 +154,6 @@
 
 <div class="toasts" id="toasts" aria-live="polite" aria-atomic="false"></div>
 
-<script src="assets/app.js?v=7"></script>
+<script src="assets/app.js?v=8"></script>
 </body>
 </html>

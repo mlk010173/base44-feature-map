@@ -42,6 +42,7 @@ const STORAGE = 'superagente.interface.v1';
 let state;
 let streaming = false;
 let abortFlag = false;
+let moreOpen = false;
 
 function seed() {
   const now = Date.now();
@@ -152,7 +153,10 @@ function load() {
   } catch { return seed(); }
 }
 function save() {
-  try { localStorage.setItem(STORAGE, JSON.stringify(state)); } catch {}
+  try {
+    state.ui = { moreOpen };
+    localStorage.setItem(STORAGE, JSON.stringify(state));
+  } catch {}
 }
 const creditsLeft = () => Math.max(0, state.agent.credits.total - state.agent.credits.used);
 const activeConv = () => state.conversations.find((c) => c.id === state.activeConversation) || state.conversations[0];
@@ -207,8 +211,9 @@ function renderChrome() {
 
   $$('.nav-item').forEach((b) => {
     const v = b.dataset.view;
-    b.classList.toggle('on', currentView() === v && !b.dataset.new);
+    if (v) b.classList.toggle('on', currentView() === v && !b.dataset.new);
   });
+  if (state.ui) { moreOpen = !!state.ui.moreOpen; syncMore(); }
 }
 
 /* ============ roteador ============ */
@@ -1231,6 +1236,15 @@ document.addEventListener('click', (e) => {
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && !$('#modalRoot').hidden) closeModal();
 });
+
+function syncMore() {
+  const g = $('#moreGroup');
+  const b = $('#moreToggle');
+  if (!g || !b) return;
+  g.classList.toggle('open', moreOpen);
+  b.setAttribute('aria-expanded', String(moreOpen));
+}
+$('#moreToggle').addEventListener('click', () => { moreOpen = !moreOpen; syncMore(); });
 
 $('#themeToggle').addEventListener('click', () => {
   const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
