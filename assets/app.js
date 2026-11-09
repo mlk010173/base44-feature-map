@@ -11,6 +11,13 @@ const initials = (name) => {
   const w = String(name || '').split(/[\s\-]+/).filter(Boolean);
   return ((w[0] || '?')[0] + (w[1] ? w[1][0] : '')).toUpperCase();
 };
+const modelOptions = () => [
+  { id: 'auto', name: 'Auto', desc: 'Escolhe o melhor modelo para cada tarefa.' },
+  { id: 'rapido', name: 'Rápido', desc: 'Respostas curtas com o menor custo.' },
+  { id: 'avancado', name: 'Avançado', desc: 'Mais contexto e respostas completas.' },
+  { id: 'raciocinio', name: 'Raciocínio', desc: 'Pensa em etapas antes de responder.' },
+];
+
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const brl = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short' });
 const brlFull = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
@@ -313,12 +320,19 @@ views.chat = function () {
             <button type="button" class="icon-round" data-act="attach" title="Anexar arquivo" aria-label="Anexar arquivo">
               <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
             </button>
-            <select class="model-select" id="modelSel" aria-label="Modelo de chat" title="Modelo de chat">
-              <option value="auto">Auto</option>
-              <option value="rapido">Rápido</option>
-              <option value="avancado">Avançado</option>
-              <option value="raciocinio">Raciocínio</option>
-            </select>
+            <div class="model-picker">
+              <button type="button" class="model-btn" id="modelBtn" data-act="modelToggle" aria-haspopup="menu" aria-expanded="false" title="Modelo de chat">
+                <span id="modelLabel">${esc(modelOptions().find((o) => o.id === state.agent.models.chat)?.name || 'Auto')}</span>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5"/></svg>
+              </button>
+              <div class="model-menu" id="modelMenu" role="menu" hidden>
+                ${modelOptions().map((o) => `
+                  <button type="button" class="model-item" role="menuitemradio" aria-checked="${state.agent.models.chat === o.id}" data-act="modelPick" data-id="${o.id}">
+                    <span class="mi-top"><b>${esc(o.name)}</b><i class="mi-check" aria-hidden="true">${state.agent.models.chat === o.id ? '✓' : ''}</i></span>
+                    <span class="mi-desc">${esc(o.desc)}</span>
+                  </button>`).join('')}
+              </div>
+            </div>
             <button type="button" class="icon-round" data-act="mic" title="Ditado por voz" aria-label="Ditado por voz">
               <svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
             </button>
@@ -335,13 +349,7 @@ views.chat = function () {
       </div>
     </div>`;
 
-  $('#modelSel').value = state.agent.models.chat;
-  $('#modelSel').addEventListener('change', (e) => {
-    state.agent.models.chat = e.target.value;
-    save();
-    toast('Modelo de chat: ' + e.target.options[e.target.selectedIndex].text);
-    renderChrome();
-  });
+
 
   const form = $('#composer');
   const input = $('#input');
@@ -447,9 +455,10 @@ function streamingHasText() {
   return !!(last && last.role === 'agent' && last.text);
 }
 function thinkingHTML() {
-  return `<div class="thinking" aria-live="polite" aria-label="Pensando"><span>
-    <svg viewBox="0 0 24 24"><path d="M12 3v3m0 12v3M4.2 7.5l2.6 1.5m10.4 6 2.6 1.5M19.8 7.5l-2.6 1.5m-10.4 6-2.6 1.5"/><circle cx="12" cy="12" r="3.4"/></svg>
-  </span></div>`;
+  return `<div class="thinking" aria-live="polite" aria-label="Pensando">
+    <span class="thought-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+    <span class="thought-label">Pensando</span>
+  </div>`;
 }
 function scrollToBottom() {
   const s = $('#chatScroll');
@@ -1044,6 +1053,23 @@ const actions = {
   /* conversas */
   openConv(el) { state.activeConversation = el.dataset.id; save(); go('chat'); },
   suggest(el) { const t = $('#input'); if (t) { t.value = el.dataset.text; t.focus(); } },
+  modelToggle(el) {
+    const menu = $('#modelMenu');
+    if (!menu) return;
+    const willOpen = menu.hasAttribute('hidden');
+    if (willOpen) menu.removeAttribute('hidden'); else menu.setAttribute('hidden', '');
+    el.setAttribute('aria-expanded', String(willOpen));
+  },
+  modelPick(el) {
+    state.agent.models.chat = el.dataset.id;
+    save();
+    const label = modelOptions().find((o) => o.id === el.dataset.id)?.name || 'Auto';
+    if ($('#modelLabel')) $('#modelLabel').textContent = label;
+    const menu = $('#modelMenu');
+    if (menu) menu.setAttribute('hidden', '');
+    $('#modelBtn')?.setAttribute('aria-expanded', 'false');
+    toast('Modelo de chat: ' + label);
+  },
   copyMsg(el) {
     const m = activeConv().messages[+el.dataset.i];
     if (!m) return;
@@ -1949,6 +1975,10 @@ function runPalette(item) {
 
 /* ============ eventos globais ============ */
 document.addEventListener('click', (e) => {
+  if (!e.target.closest('.model-picker')) {
+    const menu = $('#modelMenu');
+    if (menu && !menu.hasAttribute('hidden')) { menu.setAttribute('hidden', ''); $('#modelBtn')?.setAttribute('aria-expanded', 'false'); }
+  }
   if (e.target.id === 'paletteWrap') { closePalette(); return; }
   const closer = e.target.closest('[data-close]');
   if (closer) { closeModal(); return; }
